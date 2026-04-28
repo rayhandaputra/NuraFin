@@ -1,0 +1,218 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User specific configuration and profile data",
+      "type": "object",
+      "properties": {
+        "monthlyIncome": {
+          "type": "number",
+          "description": "The user's standard monthly income"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name"
+        }
+      },
+      "required": ["monthlyIncome", "displayName"]
+    },
+    "BudgetItem": {
+      "title": "Budget Item",
+      "description": "An individual expense or budget item",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the expense"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the expense"
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the expense (e.g. Rent, Food, Utilities)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Lunas", "Belum dibayar"],
+          "description": "Payment status of the item"
+        },
+        "deadline": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the payment is due"
+        }
+      },
+      "required": ["name", "amount", "category", "status", "deadline"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction (income or expense)",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense"] },
+        "notes": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "amount", "category", "type", "date"]
+    },
+    "Wallet": {
+      "title": "Wallet",
+      "description": "A financial account or wallet",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "currency": { "type": "string" },
+        "balance": { "type": "number" },
+        "type": { "type": "string", "enum": ["debit", "credit"] },
+        "walletType": { "type": "string", "enum": ["Bank", "E-Wallet", "Cash"] },
+        "limit": { "type": "number" },
+        "excludeFromTotal": { "type": "boolean" },
+        "color": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["name", "balance", "type"]
+    },
+    "Budget": {
+      "title": "Budget Limit",
+      "description": "A spending limit for a category",
+      "type": "object",
+      "properties": {
+        "limit": { "type": "number" },
+        "period": { "type": "string", "enum": ["Weekly", "Monthly"] },
+        "categoryId": { "type": "string" },
+        "categoryName": { "type": "string" }
+      },
+      "required": ["limit", "period", "categoryName"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "User defined transaction category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense"] },
+        "commitmentType": { "type": "string", "enum": ["debt", "fixed", "savings", "regular"] },
+        "color": { "type": "string" },
+        "icon": { "type": "string" },
+        "subCategories": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "type", "color", "icon"]
+    },
+    "Debt": {
+      "title": "Debt/Receivable",
+      "description": "A debt or receivable record",
+      "type": "object",
+      "properties": {
+        "personName": { "type": "string" },
+        "amount": { "type": "number" },
+        "paidAmount": { "type": "number", "description": "Total amount already paid back" },
+        "type": { "type": "string", "enum": ["debt", "receivable"] },
+        "borrowDate": { "type": "string", "format": "date-time" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "walletId": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "paid"] },
+        "isInstallment": { "type": "boolean" },
+        "interestRate": { "type": "number" },
+        "tenor": { "type": "number" },
+        "dueDateDay": { "type": "number" }
+      },
+      "required": ["personName", "amount", "type", "borrowDate", "status"]
+    },
+    "RecurringTransaction": {
+      "title": "Recurring Transaction",
+      "description": "A transaction that repeats automatically",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "frequency": { "type": "string", "enum": ["Monthly", "Weekly", "Daily"] },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "walletId": { "type": "string" },
+        "category": { "type": "string" },
+        "notes": { "type": "string" },
+        "relatedId": { "type": "string" },
+        "paidMonths": { "type": "array", "items": { "type": "string" } },
+        "type": { "type": "string", "enum": ["income", "expense"] }
+      },
+      "required": ["title", "amount", "frequency", "startDate"]
+    },
+    "SavingsTarget": {
+      "title": "Savings Target",
+      "description": "A financial goal for savings",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "color": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["name", "targetAmount", "currentAmount"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or user notifications",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "success"] },
+        "date": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" },
+        "link": { "type": "string" },
+        "relatedId": { "type": "string" }
+      },
+      "required": ["title", "message", "date", "read"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Top-level user document"
+    },
+    "/users/{userId}/monthly_budgets/{monthYear}/items/{itemId}": {
+      "schema": "BudgetItem",
+      "description": "List of budget items for a specific month and year"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "The list of transactions belonging to the user"
+    },
+    "/users/{userId}/wallets/{walletId}": {
+      "schema": "Wallet",
+      "description": "User's financial accounts"
+    },
+    "/users/{userId}/budgets/{budgetId}": {
+      "schema": "Budget",
+      "description": "Category-based spending limits"
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Custom categories"
+    },
+    "/users/{userId}/debts/{debtId}": {
+      "schema": "Debt",
+      "description": "User's debts and receivables"
+    },
+    "/users/{userId}/recurring_transactions/{recurringId}": {
+      "schema": "RecurringTransaction",
+      "description": "Subscription and periodic payments"
+    },
+    "/users/{userId}/savings_targets/{targetId}": {
+      "schema": "SavingsTarget",
+      "description": "User's savings goals"
+    },
+    "/users/{userId}/notifications/{notifId}": {
+      "schema": "Notification",
+      "description": "User's notifications"
+    }
+  }
+}
