@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { 
   ChevronLeft, 
@@ -98,7 +98,7 @@ export function TransactionLogPage({ onClose }: { onClose: () => void }) {
               value={selectedWallet} 
               onChange={setSelectedWallet}
               options={[
-                { label: "Semua", value: "Semua" },
+                "Semua",
                 ...wallets.map(w => ({ label: w.name, value: w.id }))
               ]} 
             />
@@ -156,12 +156,19 @@ function FilterSelect({
   onChange: (val: string) => void,
   options: (string | { label: string, value: string })[]
 }) {
+  const selectedLabel = useMemo(() => {
+    if (value === "Semua") return label;
+    const opt = options.find(o => typeof o === 'string' ? o === value : o.value === value);
+    if (!opt) return label;
+    return typeof opt === 'string' ? opt : opt.label;
+  }, [value, options, label]);
+
   return (
-    <div className="relative group">
+    <div className="relative group overflow-hidden">
       <div className="flex items-center gap-2 bg-white px-5 py-3 rounded-full border border-neutral-dark shadow-xs whitespace-nowrap text-xs font-bold text-gray-500 group-hover:bg-neutral transition-all">
         <Icon size={14} className="text-gray-300" />
-        <span className="max-w-[80px] overflow-hidden text-ellipsis">
-          {typeof options[0] === 'string' ? value : (options.find(o => (o as any).value === value) as any)?.label || label}
+        <span className="max-w-[100px] overflow-hidden text-ellipsis">
+          {selectedLabel}
         </span>
         <ChevronDown size={14} className="text-gray-300 ml-1" />
       </div>
@@ -173,8 +180,8 @@ function FilterSelect({
         {options.map((opt, i) => {
           const isString = typeof opt === 'string';
           return (
-            <option key={i} value={isString ? opt : (opt as any).value}>
-              {isString ? opt : (opt as any).label}
+            <option key={i} value={isString ? opt : opt.value}>
+              {isString ? opt : opt.label}
             </option>
           );
         })}

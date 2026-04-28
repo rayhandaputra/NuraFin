@@ -16,7 +16,8 @@ import {
   increment,
   arrayUnion,
   Unsubscribe,
-  writeBatch
+  writeBatch,
+  getDocs
 } from 'firebase/firestore';
 
 export interface UserProfile {
@@ -219,5 +220,3 @@ export const FinanceService = {
     }
   }
 };
-
-import { getDocs } from 'firebase/firestore'; // missing import fix

@@ -34,10 +34,10 @@ service cloud.firestore {
     }
 
     function hasAccess(userId) {
-      return isOwner(userId) || (
-        isSignedIn() && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('linkedUserId', null) == userId
+      return request.auth != null && (
+        request.auth.uid == userId || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('linkedUserId', null) == userId)
       );
     }
 

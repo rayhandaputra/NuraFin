@@ -135,8 +135,15 @@ export const useFinanceData = (period: 'Hari' | 'Minggu' | 'Bulan' | 'Tahun' | '
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubs: (() => void)[] = [];
+
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
+      // Clear existing subscriptions first
+      unsubs.forEach(u => u());
+      unsubs = [];
+
       if (user) {
+        setLoading(true);
         // Ensure profile exists and get it
         const userProfile = await FinanceService.ensureProfile(user);
         setProfile(userProfile);
@@ -145,31 +152,18 @@ export const useFinanceData = (period: 'Hari' | 'Minggu' | 'Bulan' | 'Tahun' | '
         const linkedUid = userProfile?.linkedUserId || null;
 
         // Use FinanceService for subscriptions
-        const unsubTx = FinanceService.subscribeCollection(uid, linkedUid, 'transactions', setTransactions, 'date');
-        const unsubBg = FinanceService.subscribeCollection(uid, linkedUid, 'budgets', setBudgets);
-        const unsubCat = FinanceService.subscribeCollection(uid, linkedUid, 'categories', setCategories);
-        const unsubWal = FinanceService.subscribeCollection(uid, linkedUid, 'wallets', setWallets);
-        const unsubBil = FinanceService.subscribeCollection(uid, linkedUid, 'bills', setBills, 'dueDate');
-        const unsubDeb = FinanceService.subscribeCollection(uid, linkedUid, 'debts', setDebts, 'createdAt');
-        const unsubRec = FinanceService.subscribeCollection(uid, linkedUid, 'recurring_transactions', setRecurringTransactions, 'startDate');
-        const unsubSav = FinanceService.subscribeCollection(uid, linkedUid, 'savings_targets', setSavingsTargets);
-        const unsubNotif = FinanceService.subscribeCollection(uid, linkedUid, 'notifications', setNotifications, 'date');
-        const unsubBun = FinanceService.subscribeCollection(uid, linkedUid, 'bundles', setBundles, 'date');
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'transactions', setTransactions, 'date'));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'budgets', setBudgets));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'categories', setCategories));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'wallets', setWallets));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'bills', setBills, 'dueDate'));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'debts', setDebts, 'createdAt'));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'recurring_transactions', setRecurringTransactions, 'startDate'));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'savings_targets', setSavingsTargets));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'notifications', setNotifications, 'date'));
+        unsubs.push(FinanceService.subscribeCollection(uid, linkedUid, 'bundles', setBundles, 'date'));
 
         setLoading(false);
-
-        return () => {
-          unsubTx();
-          unsubBg();
-          unsubCat();
-          unsubWal();
-          unsubBil();
-          unsubDeb();
-          unsubRec();
-          unsubSav();
-          unsubNotif();
-          unsubBun();
-        };
       } else {
         setProfile(null);
         setTransactions([]);
@@ -186,7 +180,10 @@ export const useFinanceData = (period: 'Hari' | 'Minggu' | 'Bulan' | 'Tahun' | '
       }
     });
 
-    return () => unsubAuth();
+    return () => {
+      unsubAuth();
+      unsubs.forEach(u => u());
+    };
   }, []);
 
   // Notification Generator Logic (H-1 Alerts)
