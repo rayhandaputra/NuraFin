@@ -3,6 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, doc, collection, getDoc, getDocs, setDoc, updateDoc, query, where, getDocFromServer } from 'firebase/firestore';
 
 // setting config firebase
+console.log("Variabel yang terbaca:", import.meta.env);
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -11,6 +12,12 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
+
+console.log("Debug API Key:", firebaseConfig.apiKey ? "Tersedia" : "KOSONG/UNDEFINED");
+
+if (!firebaseConfig.apiKey) {
+  console.error("Firebase API Key hilang di environment ini!");
+}
 
 const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID;
 
