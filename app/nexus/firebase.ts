@@ -19,10 +19,12 @@ if (!firebaseConfig.apiKey) {
   console.error("Firebase API Key hilang di environment ini!");
 }
 
-const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID;
+// const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID;
 
+// const app = initializeApp(firebaseConfig);
+// export const db = getFirestore(app, databaseId);
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, databaseId);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
