@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { 
   ChevronLeft, 
   ArrowUpDown, 
@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { useFinanceData, Category } from "../../../hooks/useFinance";
 
 export function CategoryManagement({ onClose }: { onClose: () => void }) {
+  const dragControls = useDragControls();
   const [activeTab, setActiveTab] = useState<"expense" | "income">("expense");
   const [showAddCategory, setShowAddCategory] = useState(false);
   const { categories, loading, profile } = useFinanceData();
@@ -106,6 +107,8 @@ export function CategoryManagement({ onClose }: { onClose: () => void }) {
       animate={{ x: 0 }}
       exit={{ x: "100%" }}
       drag="y"
+      dragControls={dragControls}
+      dragListener={false}
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={0.7}
       onDragEnd={(_, info) => {
@@ -114,7 +117,7 @@ export function CategoryManagement({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-[70] bg-neutral flex flex-col overflow-y-auto"
     >
       {/* Drag Handle */}
-      <div className="w-full flex justify-center pt-2 pb-1 sticky top-0 bg-neutral/80 backdrop-blur-md z-[20]">
+      <div className="w-full flex justify-center pt-2 pb-1 sticky top-0 bg-neutral/80 backdrop-blur-md z-[20] cursor-grab active:cursor-grabbing" onPointerDown={(e) => dragControls.start(e)}>
         <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
       </div>
 

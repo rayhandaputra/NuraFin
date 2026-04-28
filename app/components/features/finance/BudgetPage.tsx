@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { 
   ChevronLeft, 
   MoreVertical, 
@@ -29,6 +29,7 @@ interface Budget {
 }
 
 export function BudgetPage({ onClose }: { onClose: () => void }) {
+  const dragControls = useDragControls();
   const { transactions, categories, budgets: rawBudgets, loading, profile } = useFinanceData();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAddBudget, setShowAddBudget] = useState(false);
@@ -89,6 +90,8 @@ export function BudgetPage({ onClose }: { onClose: () => void }) {
       exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       drag="y"
+      dragControls={dragControls}
+      dragListener={false}
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={0.7}
       onDragEnd={(_, info) => {
@@ -97,7 +100,7 @@ export function BudgetPage({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-[60] bg-neutral flex flex-col overflow-y-auto"
     >
       {/* Drag Handle */}
-      <div className="w-full flex justify-center pt-2 pb-1 sticky top-0 bg-neutral/80 backdrop-blur-md z-[20]">
+      <div className="w-full flex justify-center pt-2 pb-1 sticky top-0 bg-neutral/80 backdrop-blur-md z-[20] cursor-grab active:cursor-grabbing" onPointerDown={(e) => dragControls.start(e)}>
         <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
       </div>
 

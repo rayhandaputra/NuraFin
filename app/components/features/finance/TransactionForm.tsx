@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { 
   X, 
   Camera, 
@@ -39,6 +39,7 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ onClose, initialData, relatedBundle }: TransactionFormProps) {
+  const dragControls = useDragControls();
   const { categories, wallets, loading: categoriesLoading, profile } = useFinanceData();
   const [type, setType] = useState<'pemasukan' | 'pengeluaran'>('pengeluaran');
   const [amount, setAmount] = useState(initialData?.amount || '0');
@@ -195,6 +196,8 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
       exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
       drag="y"
+      dragControls={dragControls}
+      dragListener={false}
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={0.7}
       onDragEnd={(_, info) => {
@@ -203,7 +206,7 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
       className="fixed inset-0 z-[60] bg-white flex flex-col"
     >
       {/* Drag Handle */}
-      <div className="w-full flex justify-center pt-2 pb-1">
+      <div className="w-full flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing" onPointerDown={(e) => dragControls.start(e)}>
         <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
       </div>
 
