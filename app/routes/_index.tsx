@@ -1,10 +1,10 @@
 import { useFinanceData } from "../hooks/useFinance";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Bell, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Send, 
+import {
+  Bell,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Send,
   Wallet as WalletIcon,
   Plus,
   ChevronRight,
@@ -111,7 +111,7 @@ export default function Dashboard() {
   if (!user) {
     return (
       <div className="mobile-container flex flex-col items-center justify-center bg-neutral p-8 text-center">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white p-10 rounded-[40px] shadow-2xl flex flex-col items-center gap-6"
@@ -123,7 +123,7 @@ export default function Dashboard() {
             <h1 className="text-2xl font-black text-primary">Mizanly</h1>
             <p className="text-gray-500 text-sm italic font-serif mt-2">Masuk untuk mulai mencapai keseimbangan finansial holistik Anda.</p>
           </div>
-          <button 
+          <button
             onClick={loginWithGoogle}
             className="w-full bg-primary text-white py-4 rounded-[20px] font-bold flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-primary/20"
           >
@@ -139,12 +139,12 @@ export default function Dashboard() {
     <div className="mobile-container">
       <AnimatePresence>
         {isAddingTransaction && (
-          <TransactionForm 
-            initialData={prefilledData} 
+          <TransactionForm
+            initialData={prefilledData}
             onClose={() => {
               setIsAddingTransaction(false);
               setPrefilledData(null);
-            }} 
+            }}
           />
         )}
         {showBudgets && (
@@ -181,9 +181,9 @@ export default function Dashboard() {
           <BundlePage onClose={() => setShowBundleList(false)} />
         )}
         {selectedWalletDetail && (
-          <WalletDetailPage 
-            wallet={selectedWalletDetail} 
-            onClose={() => setSelectedWalletDetail(null)} 
+          <WalletDetailPage
+            wallet={selectedWalletDetail}
+            onClose={() => setSelectedWalletDetail(null)}
           />
         )}
       </AnimatePresence>
@@ -208,22 +208,22 @@ export default function Dashboard() {
             </button>
           ) : (
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowNotificationPopup(!showNotificationPopup)}
                 className="p-2.5 bg-surface rounded-full shadow-sm relative active:scale-95 transition-all"
               >
                 <Bell size={20} className="text-gray-400" />
                 <NotificationBadge />
               </button>
-              
+
               <AnimatePresence>
                 {showNotificationPopup && (
-                  <NotificationPopup 
+                  <NotificationPopup
                     profile={profile}
-                    onClose={() => setShowNotificationPopup(false)} 
+                    onClose={() => setShowNotificationPopup(false)}
                     onSeeAll={() => {
-                        setShowNotificationPopup(false);
-                        setShowNotifications(true);
+                      setShowNotificationPopup(false);
+                      setShowNotifications(true);
                     }}
                   />
                 )}
@@ -236,7 +236,7 @@ export default function Dashboard() {
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           {isScanning ? (
-            <motion.main 
+            <motion.main
               key="scanner"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -269,9 +269,9 @@ export default function Dashboard() {
               className="pb-32"
             >
               {activeTab === 'home' && (
-                <HomeTab 
-                  onScan={() => setIsScanning(true)} 
-                  onAdd={() => setIsAddingTransaction(true)} 
+                <HomeTab
+                  onScan={() => setIsScanning(true)}
+                  onAdd={() => setIsAddingTransaction(true)}
                   onOpenBudgets={() => setShowBudgets(true)}
                   onOpenDebts={() => setShowDebts(true)}
                   onOpenTransactionLog={() => setShowTransactionLog(true)}
@@ -286,8 +286,8 @@ export default function Dashboard() {
               )}
               {activeTab === 'insights' && <InsightsTab onOpenLog={() => setShowTransactionLog(true)} />}
               {activeTab === 'wallet' && (
-                <WalletTab 
-                  onAddNew={() => setShowNewWallet(true)} 
+                <WalletTab
+                  onAddNew={() => setShowNewWallet(true)}
                   onWalletClick={(w) => setSelectedWalletDetail(w)}
                 />
               )}
@@ -299,29 +299,29 @@ export default function Dashboard() {
 
       {/* Bottom Navigation */}
       <nav className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] bg-white rounded-[40px] shadow-2xl px-8 py-4 flex items-center justify-between z-50">
-        <NavLink 
-          isActive={activeTab === 'home'} 
-          onClick={() => setActiveTab('home')} 
-          icon={Home} 
-          label="Beranda" 
+        <NavLink
+          isActive={activeTab === 'home'}
+          onClick={() => setActiveTab('home')}
+          icon={Home}
+          label="Beranda"
         />
-        <NavLink 
-          isActive={activeTab === 'insights'} 
-          onClick={() => setActiveTab('insights')} 
-          icon={BarChart3} 
-          label="Laporan" 
+        <NavLink
+          isActive={activeTab === 'insights'}
+          onClick={() => setActiveTab('insights')}
+          icon={BarChart3}
+          label="Laporan"
         />
-        <NavLink 
-          isActive={activeTab === 'wallet'} 
-          onClick={() => setActiveTab('wallet')} 
-          icon={WalletIcon} 
-          label="Dompet" 
+        <NavLink
+          isActive={activeTab === 'wallet'}
+          onClick={() => setActiveTab('wallet')}
+          icon={WalletIcon}
+          label="Dompet"
         />
-        <NavLink 
-          isActive={activeTab === 'profile'} 
-          onClick={() => setActiveTab('profile')} 
-          icon={User} 
-          label="Profil" 
+        <NavLink
+          isActive={activeTab === 'profile'}
+          onClick={() => setActiveTab('profile')}
+          icon={User}
+          label="Profil"
         />
       </nav>
     </div>
@@ -329,86 +329,85 @@ export default function Dashboard() {
 }
 
 function NotificationBadge() {
-    const { notifications } = useFinanceData();
-    const unreadCount = notifications.filter(n => !n.read).length;
-    
-    if (unreadCount === 0) return null;
+  const { notifications } = useFinanceData();
+  const unreadCount = notifications.filter(n => !n.read).length;
 
-    return (
-        <div className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
-    );
+  if (unreadCount === 0) return null;
+
+  return (
+    <div className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
+  );
 }
 
 function NotificationPopup({ profile, onClose, onSeeAll }: { profile: any, onClose: () => void, onSeeAll: () => void }) {
-    const { notifications } = useFinanceData();
-    const user = auth.currentUser;
+  const { notifications } = useFinanceData();
+  const user = auth.currentUser;
 
-    const handleRead = async (id: string) => {
-        if (!user || !profile) return;
-        try {
-            await FinanceService.updateData(user.uid, profile.linkedUserId || null, 'notifications', id, { read: true });
-        } catch (error) {
-            console.error("Failed to mark notification as read", error);
-        }
-    };
+  const handleRead = async (id: string) => {
+    if (!user || !profile) return;
+    try {
+      await FinanceService.updateData(user.uid, profile.linkedUserId || null, 'notifications', id, { read: true });
+    } catch (error) {
+      console.error("Failed to mark notification as read", error);
+    }
+  };
 
-    return (
-        <>
-            <div className="fixed inset-0 z-[55]" onClick={onClose} />
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: -10, x: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -10, x: 20 }}
-                className="absolute right-0 mt-2 w-72 bg-white rounded-[32px] shadow-2xl border border-neutral-dark z-[60] overflow-hidden flex flex-col"
-            >
-                <div className="p-4 border-b border-neutral flex justify-between items-center">
-                    <h4 className="text-sm font-black text-[#1e293b]">Notifikasi</h4>
-                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                        {notifications.filter(n => !n.read).length} Baru
-                    </span>
+  return (
+    <>
+      <div className="fixed inset-0 z-[55]" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: -10, x: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -10, x: 20 }}
+        className="absolute right-0 mt-2 w-72 bg-white rounded-[32px] shadow-2xl border border-neutral-dark z-[60] overflow-hidden flex flex-col"
+      >
+        <div className="p-4 border-b border-neutral flex justify-between items-center">
+          <h4 className="text-sm font-black text-[#1e293b]">Notifikasi</h4>
+          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            {notifications.filter(n => !n.read).length} Baru
+          </span>
+        </div>
+
+        <div className="max-h-80 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="p-8 text-center text-gray-400 text-xs italic font-bold">
+              Tidak ada notifikasi
+            </div>
+          ) : (
+            notifications.slice(0, 5).map(notif => (
+              <button
+                key={notif.id}
+                onClick={() => {
+                  handleRead(notif.id);
+                  // Handle link if needed
+                }}
+                className={`w-full p-4 flex items-start gap-3 border-b border-neutral hover:bg-neutral transition-colors text-left ${!notif.read ? 'bg-blue-50/30' : ''}`}
+              >
+                <div className={`w-8 h-8 shrink-0 rounded-xl flex items-center justify-center ${notif.type === 'success' ? 'bg-green-50 text-green-500' :
+                    notif.type === 'warning' ? 'bg-yellow-50 text-yellow-500' :
+                      'bg-blue-50 text-blue-500'
+                  }`}>
+                  <Bell size={14} />
                 </div>
-                
-                <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                        <div className="p-8 text-center text-gray-400 text-xs italic font-bold">
-                            Tidak ada notifikasi
-                        </div>
-                    ) : (
-                        notifications.slice(0, 5).map(notif => (
-                            <button 
-                                key={notif.id}
-                                onClick={() => {
-                                    handleRead(notif.id);
-                                    // Handle link if needed
-                                }}
-                                className={`w-full p-4 flex items-start gap-3 border-b border-neutral hover:bg-neutral transition-colors text-left ${!notif.read ? 'bg-blue-50/30' : ''}`}
-                            >
-                                <div className={`w-8 h-8 shrink-0 rounded-xl flex items-center justify-center ${
-                                    notif.type === 'success' ? 'bg-green-50 text-green-500' :
-                                    notif.type === 'warning' ? 'bg-yellow-50 text-yellow-500' :
-                                    'bg-blue-50 text-blue-500'
-                                }`}>
-                                    <Bell size={14} />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <p className="text-[11px] font-black text-[#1e293b] leading-tight">{notif.title}</p>
-                                    <p className="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">{notif.message}</p>
-                                    <p className="text-[8px] font-bold text-gray-300 mt-1 uppercase">{notif.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
-                                </div>
-                            </button>
-                        ))
-                    )}
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-[11px] font-black text-[#1e293b] leading-tight">{notif.title}</p>
+                  <p className="text-[10px] text-gray-500 line-clamp-2 leading-relaxed">{notif.message}</p>
+                  <p className="text-[8px] font-bold text-gray-300 mt-1 uppercase">{notif.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
+              </button>
+            ))
+          )}
+        </div>
 
-                <button 
-                    onClick={onSeeAll}
-                    className="p-4 w-full text-center text-xs font-bold text-primary hover:bg-neutral transition-colors"
-                >
-                    Lihat Semua
-                </button>
-            </motion.div>
-        </>
-    );
+        <button
+          onClick={onSeeAll}
+          className="p-4 w-full text-center text-xs font-bold text-primary hover:bg-neutral transition-colors"
+        >
+          Lihat Semua
+        </button>
+      </motion.div>
+    </>
+  );
 }
 
 function NavLink({ isActive, onClick, icon: Icon, label }: { isActive: boolean, onClick: () => void, icon: any, label: string }) {
@@ -422,12 +421,12 @@ function NavLink({ isActive, onClick, icon: Icon, label }: { isActive: boolean, 
   );
 }
 
-function HomeTab({ 
-  onScan, 
-  onAdd, 
-  onOpenBudgets, 
-  onOpenDebts, 
-  onOpenTransactionLog, 
+function HomeTab({
+  onScan,
+  onAdd,
+  onOpenBudgets,
+  onOpenDebts,
+  onOpenTransactionLog,
   onOpenHealthHub,
   onOpenBills,
   onOpenRecurring,
@@ -435,9 +434,9 @@ function HomeTab({
   onOpenBundles,
   activeFilter,
   setActiveFilter
-}: { 
-  onScan: () => void, 
-  onAdd: () => void, 
+}: {
+  onScan: () => void,
+  onAdd: () => void,
   onOpenBudgets: () => void,
   onOpenDebts: () => void,
   onOpenTransactionLog: () => void,
@@ -456,7 +455,7 @@ function HomeTab({
     <div className="flex flex-col gap-8">
       <div className="px-6 flex gap-2">
         {timeFilters.map(filter => (
-          <button 
+          <button
             key={filter}
             onClick={() => setActiveFilter(filter as any)}
             className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all ${activeFilter === filter ? 'bg-primary text-white shadow-lg' : 'bg-neutral-dark text-gray-500'}`}
@@ -476,9 +475,9 @@ function HomeTab({
                 Rp{stats.balance.toLocaleString('id-ID')}
               </h2>
             </div>
-            
+
             <div className="h-px w-full bg-white/10 my-2"></div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
@@ -530,9 +529,9 @@ function HomeTab({
               {stats.expense > 0 ? Math.round((stats.expense / stats.totalBudgetLimit) * 100) : 0}% Terpakai
             </span>
           </div>
-          
+
           <div className="w-full h-2.5 bg-neutral-dark rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-primary rounded-full shadow-lg shadow-primary/20 transition-all duration-500"
               style={{ width: `${Math.min(100, stats.expense > 0 ? (stats.expense / stats.totalBudgetLimit) * 100 : 5)}%` }}
             ></div>
@@ -554,14 +553,14 @@ function HomeTab({
       <section className="px-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-black text-primary">Transaksi Terakhir</h3>
-          <button 
+          <button
             onClick={onOpenTransactionLog}
             className="text-[10px] font-bold text-primary uppercase border-b-2 border-primary/20"
           >
             Lihat Semua
           </button>
         </div>
-        
+
         {loading ? (
           <div className="flex justify-center p-10">
             <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -632,7 +631,7 @@ function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWallet
   }
 
   const getWalletIcon = (iconName: string) => {
-    switch(iconName) {
+    switch (iconName) {
       case 'Building2': return Building2;
       case 'Smartphone': return Smartphone;
       default: return WalletIcon;
@@ -658,7 +657,7 @@ function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWallet
               Rp{stats.totalWalletBalance.toLocaleString('id-ID')}
             </h3>
           </div>
-          
+
           <div className="flex flex-col gap-4 relative z-10">
             <div className="bg-white/80 p-5 rounded-3xl flex justify-between items-center backdrop-blur-sm border border-white/50">
               <span className="text-xs font-bold text-gray-500 uppercase">Pemasukan Bulan Ini</span>
@@ -675,20 +674,20 @@ function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWallet
       {/* Debit Section */}
       <section className="px-6 space-y-4">
         <div className="flex items-center gap-2 px-2">
-           <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-           <h3 className="text-xs font-black text-primary uppercase tracking-widest">Saldo Debit / Tunai</h3>
+          <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+          <h3 className="text-xs font-black text-primary uppercase tracking-widest">Saldo Debit / Tunai</h3>
         </div>
         <div className="surface-card flex flex-col gap-6">
           {debitWallets.length === 0 ? (
-             <div className="text-center py-6 text-gray-400 font-bold italic text-xs">
-                Belum ada dompet debit.
-             </div>
+            <div className="text-center py-6 text-gray-400 font-bold italic text-xs">
+              Belum ada dompet debit.
+            </div>
           ) : (
             debitWallets.map(wallet => {
               const Icon = getWalletIcon(wallet.icon);
               return (
-                <button 
-                  key={wallet.id} 
+                <button
+                  key={wallet.id}
                   onClick={() => onWalletClick(wallet)}
                   className="flex items-center justify-between group w-full text-left"
                 >
@@ -712,23 +711,23 @@ function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWallet
       {/* Credit Section */}
       <section className="px-6 space-y-4">
         <div className="flex items-center gap-2 px-2">
-           <div className="w-1.5 h-4 bg-[#1e293b] rounded-full"></div>
-           <h3 className="text-xs font-black text-[#1e293b] uppercase tracking-widest">Limit Kredit / Paylater</h3>
+          <div className="w-1.5 h-4 bg-[#1e293b] rounded-full"></div>
+          <h3 className="text-xs font-black text-[#1e293b] uppercase tracking-widest">Limit Kredit / Paylater</h3>
         </div>
         <div className="bg-[#1e293b] rounded-[40px] p-8 flex flex-col gap-6 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-          
+
           {creditWallets.length === 0 ? (
-             <div className="text-center py-6 text-gray-400 font-bold italic text-xs">
-                Belum ada limit kredit terdaftar.
-             </div>
+            <div className="text-center py-6 text-gray-400 font-bold italic text-xs">
+              Belum ada limit kredit terdaftar.
+            </div>
           ) : (
             creditWallets.map(wallet => {
               const Icon = getWalletIcon(wallet.icon);
               const usedPercent = (wallet.balance / (wallet.limit || 1)) * 100;
               return (
-                <button 
-                  key={wallet.id} 
+                <button
+                  key={wallet.id}
                   onClick={() => onWalletClick(wallet)}
                   className="flex flex-col gap-4 w-full text-left p-4 rounded-[32px] bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                 >
@@ -743,8 +742,8 @@ function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWallet
                       </div>
                     </div>
                     <div className="text-right">
-                       <p className="text-[10px] font-bold text-white/40 uppercase">Tersedia</p>
-                       <p className="text-sm font-black text-white">Rp{(wallet.limit - wallet.balance).toLocaleString('id-ID')}</p>
+                      <p className="text-[10px] font-bold text-white/40 uppercase">Tersedia</p>
+                      <p className="text-sm font-black text-white">Rp{(wallet.limit - wallet.balance).toLocaleString('id-ID')}</p>
                     </div>
                   </div>
 
@@ -754,7 +753,7 @@ function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWallet
                       <span className="text-[10px] font-black text-white">{usedPercent.toFixed(1)}%</span>
                     </div>
                     <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full rounded-full transition-all duration-500 ${usedPercent > 80 ? 'bg-accent' : 'bg-primary'}`}
                         style={{ width: `${Math.min(100, usedPercent)}%` }}
                       ></div>
@@ -768,7 +767,7 @@ function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWallet
       </section>
 
       <section className="px-6">
-        <button 
+        <button
           onClick={onAddNew}
           className="w-full bg-primary py-6 rounded-[32px] text-white flex items-center justify-center gap-3 shadow-2xl shadow-primary/20 active:scale-95 transition-all"
         >
@@ -785,7 +784,7 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
   const [linkingCode, setLinkingCode] = useState("");
   const [isLinking, setIsLinking] = useState(false);
   const user = auth.currentUser;
-  
+
   if (!user || !profile) return null;
 
   const handleLink = async () => {
@@ -851,24 +850,24 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
       <section className="px-6">
         <div className="bg-[#1e293b] rounded-[40px] p-8 text-white relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-          
+
           <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
               <div>
-                 <h3 className="text-lg font-black tracking-tight leading-tight">Kode Akses Saya</h3>
-                 <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Bagikan ke Keluarga/Pasangan</p>
+                <h3 className="text-lg font-black tracking-tight leading-tight">Kode Akses Saya</h3>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-1">Bagikan ke Keluarga/Pasangan</p>
               </div>
               <Users size={24} className="text-white/20" />
             </div>
 
             <div className="bg-white/10 p-5 rounded-[28px] border border-white/10 flex items-center justify-between">
-               <span className="text-2xl font-black tracking-[0.2em]">{profile.appCode}</span>
-               <button 
+              <span className="text-2xl font-black tracking-[0.2em]">{profile.appCode}</span>
+              <button
                 onClick={handleCopyCode}
                 className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-all"
-               >
-                 <Copy size={20} />
-               </button>
+              >
+                <Copy size={20} />
+              </button>
             </div>
 
             <div className="h-px bg-white/10 w-full" />
@@ -881,7 +880,7 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
                   </div>
                   <span className="text-xs font-bold text-green-400">Terhubung dengan Akun Partner</span>
                 </div>
-                <button 
+                <button
                   onClick={handleUnlink}
                   className="w-full py-3 bg-red-500/10 text-red-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-red-500/20"
                 >
@@ -892,14 +891,14 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
               <div className="flex flex-col gap-4">
                 <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Tautkan ke Kode Partner</p>
                 <div className="flex gap-2">
-                  <input 
+                  <input
                     type="text"
                     placeholder="KODE..."
                     value={linkingCode}
                     onChange={(e) => setLinkingCode(e.target.value)}
                     className="flex-1 bg-white/10 border border-white/10 rounded-2xl px-4 py-3 text-sm font-black uppercase tracking-widest placeholder:text-white/20 outline-none focus:border-primary"
                   />
-                  <button 
+                  <button
                     onClick={handleLink}
                     disabled={isLinking || !linkingCode}
                     className="bg-primary px-6 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50"
@@ -919,7 +918,7 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
             <h3 className="font-black text-primary">Informasi Pribadi</h3>
             <User size={18} className="text-gray-300" />
           </div>
-          
+
           <div className="flex flex-col gap-4">
             <div className="space-y-2">
               <span className="text-[10px] font-bold text-gray-400 uppercase ml-4">Nama Lengkap</span>
@@ -944,8 +943,8 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
             <h3 className="font-black text-primary">Pengaturan & Kategori</h3>
             <Settings size={18} className="text-gray-300" />
           </div>
-          
-          <button 
+
+          <button
             onClick={onOpenCategories}
             className="flex items-center justify-between p-4 bg-white border border-neutral-dark rounded-2xl hover:bg-neutral transition-colors"
           >
@@ -956,16 +955,18 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
             <ChevronRight size={18} className="text-gray-300" />
           </button>
 
-          <button 
+          <button
             onClick={() => {
-              if ("Notification" in window) {
+              if ("Notification" in window && "serviceWorker" in navigator) {
                 Notification.requestPermission().then(permission => {
                   if (permission === "granted") {
-                    new Notification("Mizanly Notif", {
-                      body: "Ini adalah notifikasi percobaan dari Mizanly! 🚀",
-                      icon: "/favicon.ico"
+                    navigator.serviceWorker.ready.then(registration => {
+                      registration.showNotification("Mizanly Notif", {
+                        body: "Ini adalah notifikasi percobaan dari Mizanly! 🚀",
+                        icon: "/icon-192x192.png"
+                      });
+                      toast.success("Notifikasi terkirim!");
                     });
-                    toast.success("Notifikasi terkirim!");
                   } else {
                     toast.error("Izin notifikasi ditolak");
                   }
@@ -990,7 +991,7 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
             </div>
             <ChevronRight size={18} className="text-gray-300" />
           </button>
-          
+
           <div className="flex items-center justify-between p-4 bg-white border border-neutral-dark rounded-2xl">
             <div className="flex items-center gap-3">
               <Settings size={18} className="text-primary" />
@@ -1016,7 +1017,7 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
       </section>
 
       <section className="px-6 pb-12">
-        <button 
+        <button
           onClick={() => signOut(auth)}
           className="w-full py-5 rounded-[24px] border-2 border-red-200 text-red-500 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all"
         >
