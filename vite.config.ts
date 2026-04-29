@@ -11,6 +11,9 @@ export default defineConfig({
     tsconfigPaths(),
     VitePWA({
       registerType: "autoUpdate",
+      devOptions: {
+        enabled: true,
+      },
       includeAssets: ["icon.svg", "icon-192x192.png", "icon-512x512.png"],
       manifest: {
         name: "Mizanly Finance",
