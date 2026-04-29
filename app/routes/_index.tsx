@@ -384,8 +384,8 @@ function NotificationPopup({ profile, onClose, onSeeAll }: { profile: any, onClo
                 className={`w-full p-4 flex items-start gap-3 border-b border-neutral hover:bg-neutral transition-colors text-left ${!notif.read ? 'bg-blue-50/30' : ''}`}
               >
                 <div className={`w-8 h-8 shrink-0 rounded-xl flex items-center justify-center ${notif.type === 'success' ? 'bg-green-50 text-green-500' :
-                    notif.type === 'warning' ? 'bg-yellow-50 text-yellow-500' :
-                      'bg-blue-50 text-blue-500'
+                  notif.type === 'warning' ? 'bg-yellow-50 text-yellow-500' :
+                    'bg-blue-50 text-blue-500'
                   }`}>
                   <Bell size={14} />
                 </div>
@@ -957,16 +957,14 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
 
           <button
             onClick={() => {
-              if ("Notification" in window && "serviceWorker" in navigator) {
+              if ("Notification" in window) {
                 Notification.requestPermission().then(permission => {
                   if (permission === "granted") {
-                    navigator.serviceWorker.ready.then(registration => {
-                      registration.showNotification("Mizanly Notif", {
-                        body: "Ini adalah notifikasi percobaan dari Mizanly! 🚀",
-                        icon: "/icon-192x192.png"
-                      });
-                      toast.success("Notifikasi terkirim!");
+                    new Notification("Mizanly Notif", {
+                      body: "Ini adalah notifikasi percobaan dari Mizanly! 🚀",
+                      icon: "/favicon.ico"
                     });
+                    toast.success("Notifikasi terkirim!");
                   } else {
                     toast.error("Izin notifikasi ditolak");
                   }
