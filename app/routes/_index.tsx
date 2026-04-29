@@ -59,6 +59,7 @@ import { auth, loginWithGoogle, db, handleFirestoreError, OperationType } from "
 import { doc, updateDoc } from "firebase/firestore";
 import { FinanceService } from "../services/financeService";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 type Tab = 'home' | 'insights' | 'wallet' | 'profile';
 
@@ -194,9 +195,6 @@ export default function Dashboard() {
             <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden border-2 border-surface shadow-sm">
               <img src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} alt="Profile" />
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-accent text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full border border-white">
-              Lvl 1
-            </div>
           </div>
           <div>
             <p className="text-[12px] text-gray-500 font-medium font-serif italic">Hai, {user.displayName?.split(' ')[0] || 'User'}!</p>
@@ -286,7 +284,7 @@ export default function Dashboard() {
                   setActiveFilter={setActiveFilter}
                 />
               )}
-              {activeTab === 'insights' && <InsightsTab />}
+              {activeTab === 'insights' && <InsightsTab onOpenLog={() => setShowTransactionLog(true)} />}
               {activeTab === 'wallet' && (
                 <WalletTab 
                   onAddNew={() => setShowNewWallet(true)} 
@@ -618,8 +616,8 @@ function HomeTab({
   );
 }
 
-function InsightsTab() {
-  return <StatisticsDashboard />;
+function InsightsTab({ onOpenLog }: { onOpenLog: () => void }) {
+  return <StatisticsDashboard onShowAllTransactions={onOpenLog} />;
 }
 
 function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWalletClick: (w: any) => void }) {
@@ -805,12 +803,25 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
   };
 
   const handleUnlink = async () => {
-    if (!confirm("Putuskan tautan akun? Anda akan kembali menggunakan data sendiri.")) return;
-    try {
-      await FinanceService.unlinkAccount(user.uid);
-      toast.success("Tautan diputuskan");
-    } catch (error) {
-      toast.error("Gagal memutuskan tautan");
+    const result = await Swal.fire({
+      title: 'Putuskan Tautan?',
+      text: "Anda akan kembali menggunakan data sendiri setelah ini.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Putuskan!',
+      cancelButtonText: 'Batal',
+      customClass: { popup: 'rounded-[32px]' }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await FinanceService.unlinkAccount(user.uid);
+        toast.success("Tautan diputuskan");
+      } catch (error) {
+        toast.error("Gagal memutuskan tautan");
+      }
     }
   };
 
@@ -941,6 +952,33 @@ function ProfileTab({ onOpenCategories }: { onOpenCategories: () => void }) {
             <div className="flex items-center gap-3">
               <LayoutGrid size={18} className="text-primary" />
               <span className="text-sm font-bold text-gray-700">Kelola Kategori</span>
+            </div>
+            <ChevronRight size={18} className="text-gray-300" />
+          </button>
+
+          <button 
+            onClick={() => {
+              if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                  if (permission === "granted") {
+                    new Notification("Mizanly Notif", {
+                      body: "Ini adalah notifikasi percobaan dari Mizanly! 🚀",
+                      icon: "/favicon.ico"
+                    });
+                    toast.success("Notifikasi terkirim!");
+                  } else {
+                    toast.error("Izin notifikasi ditolak");
+                  }
+                });
+              } else {
+                toast.error("Browser tidak mendukung notifikasi");
+              }
+            }}
+            className="flex items-center justify-between p-4 bg-white border border-neutral-dark rounded-2xl hover:bg-neutral transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Bell size={18} className="text-primary" />
+              <span className="text-sm font-bold text-gray-700">Test Push Notif</span>
             </div>
             <ChevronRight size={18} className="text-gray-300" />
           </button>

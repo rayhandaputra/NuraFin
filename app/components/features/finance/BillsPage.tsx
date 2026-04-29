@@ -13,6 +13,7 @@ import {
 import { auth } from "../../../nexus/firebase";
 import { FinanceService } from "../../../services/financeService";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { useFinanceData, Bill } from "../../../hooks/useFinance";
 
 export function BillsPage({ onClose }: { onClose: () => void }) {
@@ -22,13 +23,31 @@ export function BillsPage({ onClose }: { onClose: () => void }) {
 
   const handleDeleteBill = async (id: string) => {
     const user = auth.currentUser;
-    if (!user || !profile || !confirm("Hapus tagihan ini?")) return;
+    if (!user || !profile) return;
 
-    try {
-      await FinanceService.deleteData(user.uid, profile.linkedUserId || null, 'bills', id);
-      toast.success("Tagihan dihapus");
-    } catch (error: any) {
-      toast.error(`Gagal: ${error.message}`);
+    const result = await Swal.fire({
+      title: 'Hapus Tagihan?',
+      text: "Data tagihan akan dihapus secara permanen.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      customClass: {
+        popup: 'rounded-[32px]',
+        confirmButton: 'rounded-xl px-6 py-3 font-bold',
+        cancelButton: 'rounded-xl px-6 py-3 font-bold'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await FinanceService.deleteData(user.uid, profile.linkedUserId || null, 'bills', id);
+        toast.success("Tagihan dihapus");
+      } catch (error: any) {
+        toast.error(`Gagal: ${error.message}`);
+      }
     }
   };
 

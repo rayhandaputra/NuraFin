@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ChevronLeft, 
+  ChevronDown, 
+  ChevronLeft,
   ChevronRight, 
   ArrowUpRight, 
   ArrowDownLeft, 
@@ -20,7 +21,8 @@ import {
   Clock,
   Briefcase,
   AlertCircle,
-  ShoppingBag
+  ShoppingBag,
+  Download
 } from "lucide-react";
 import { 
   PieChart, 
@@ -38,12 +40,19 @@ import {
   Area 
 } from "recharts";
 import { useFinanceData, Transaction } from "../../../hooks/useFinance";
+import * as XLSX from 'xlsx';
+import { toast } from "sonner";
+import { toPng } from 'html-to-image';
 
 type StatsPeriod = 'Mingguan' | 'Bulanan' | 'Tahunan' | 'Rentang';
 type ViewType = 'Pemasukan' | 'Pengeluaran';
 
-export function StatisticsDashboard() {
+export function StatisticsDashboard({ onShowAllTransactions }: { onShowAllTransactions?: () => void }) {
+  const dashboardRef = useRef<HTMLDivElement>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
   const [period, setPeriod] = useState<StatsPeriod>('Bulanan');
+  const [startDate, setStartDate] = useState<string>(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [viewType, setViewType] = useState<ViewType>('Pengeluaran');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,6 +70,8 @@ export function StatisticsDashboard() {
       stats: financeStats
   } = useFinanceData('Semua');
 
+  const setShowAllTransactions = onShowAllTransactions;
+
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
       const tDate = new Date(t.date);
@@ -70,9 +81,89 @@ export function StatisticsDashboard() {
       if (period === 'Tahunan') {
          return tDate.getFullYear() === currentDate.getFullYear();
       }
+      if (period === 'Rentang') {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return tDate >= start && tDate <= end;
+      }
       return true;
     });
-  }, [transactions, currentDate, period]);
+  }, [transactions, currentDate, period, startDate, endDate]);
+
+  const totals = useMemo(() => {
+    return filteredTransactions.reduce((acc, t) => {
+      if (t.type === 'income') acc.income += t.amount;
+      else acc.expense += t.amount;
+      return acc;
+    }, { income: 0, expense: 0 });
+  }, [filteredTransactions]);
+
+  const handleExport = (type: 'csv' | 'xlsx') => {
+    if (filteredTransactions.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+
+    const exportData = filteredTransactions.map(t => ({
+      Tanggal: t.date.toLocaleDateString('id-ID'),
+      Judul: t.title,
+      Kategori: t.category,
+      Tipe: t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+      Jumlah: t.amount,
+      Dompet: wallets.find(w => w.id === t.walletId)?.name || 'N/A',
+      Catatan: t.notes || ''
+    }));
+
+    // Add totals row
+    const totalIncome = filteredTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const totalExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+    
+    exportData.push({
+      Tanggal: 'TOTAL',
+      Judul: 'Ringkasan',
+      Kategori: '-',
+      Tipe: '-',
+      Jumlah: 0, // Placeholder
+      Dompet: '-',
+      Catatan: `Pemasukan: Rp${totalIncome.toLocaleString()} | Pengeluaran: Rp${totalExpense.toLocaleString()}`
+    } as any);
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+    
+    const fileName = `Export_Keuangan_${period}_${new Date().getTime()}.${type}`;
+    XLSX.writeFile(wb, fileName);
+    toast.success(`Berhasil ekspor ke ${type.toUpperCase()}`);
+  };
+  
+  const handleExportImage = async () => {
+    if (reportRef.current === null) return;
+    
+    const toastId = toast.loading("Menghasilkan laporan gambar...");
+    try {
+      // Temporarily show for capture if needed, or ensure it's rendered
+      const dataUrl = await toPng(reportRef.current, { 
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+        style: {
+          padding: '40px',
+          borderRadius: '0px'
+        },
+        pixelRatio: 2,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `Laporan_Transaksi_${period}_${new Date().toLocaleDateString('id-ID')}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Laporan berhasil disimpan!", { id: toastId });
+    } catch (err) {
+      console.error("Export Error:", err);
+      toast.error("Gagal mengekspor gambar laporan.", { id: toastId });
+    }
+  };
 
   const [showCommitments, setShowCommitments] = useState(false);
 
@@ -302,6 +393,7 @@ export function StatisticsDashboard() {
 
   return (
     <div className="flex flex-col gap-6 pb-10">
+      <div ref={dashboardRef} className="flex flex-col gap-6 bg-neutral-light pb-6">
       <header className="px-6 pt-2">
         <h2 className="text-2xl font-black text-primary text-center">Statistik</h2>
       </header>
@@ -321,7 +413,59 @@ export function StatisticsDashboard() {
         </div>
       </div>
 
+      {period === 'Rentang' && (
+        <div className="px-6 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="bg-white p-6 rounded-[32px] shadow-sm border border-neutral-dark grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Mulai</label>
+              <input 
+                type="date" 
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-neutral px-4 py-3 rounded-2xl text-xs font-bold text-primary outline-none border border-neutral-dark w-full"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Selesai</label>
+              <input 
+                type="date" 
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-neutral px-4 py-3 rounded-2xl text-xs font-bold text-primary outline-none border border-neutral-dark w-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quick Stats Grid */}
+      <section className="px-6 flex justify-between items-center bg-white/30 py-3 rounded-2xl border border-neutral-dark/30 shadow-sm mx-6 mb-2">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-2">Opsi Ekspor</span>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => handleExport('csv')}
+            className="flex items-center gap-2 px-4 py-1.5 bg-neutral text-[10px] font-black text-primary uppercase rounded-xl border border-neutral-dark active:scale-95 transition-all"
+          >
+            <Download size={12} />
+            CSV
+          </button>
+          <button 
+            onClick={() => handleExport('xlsx')}
+            className="flex items-center gap-2 px-4 py-1.5 bg-green-50 text-[10px] font-black text-green-600 uppercase rounded-xl border border-green-200 active:scale-95 transition-all"
+          >
+            <Download size={12} />
+            Excel
+          </button>
+          <button 
+            onClick={handleExportImage}
+            className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-[10px] font-black text-blue-600 uppercase rounded-xl border border-blue-200 active:scale-95 transition-all"
+          >
+            <Download size={12} />
+            Image
+          </button>
+        </div>
+      </section>
+
       <section className="px-6 grid grid-cols-2 gap-4">
         <div className="bg-white p-6 rounded-[32px] shadow-sm border border-neutral-dark flex flex-col gap-1">
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Saldo Rill</span>
@@ -697,6 +841,65 @@ export function StatisticsDashboard() {
             </div>
         </div>
       </section>
+      </div>
+
+      {/* Hidden Report Template for Image Export */}
+      <div className="fixed -left-[9999px] top-0">
+        <div ref={reportRef} className="w-[800px] bg-white p-10 flex flex-col gap-6 text-black">
+          <div className="flex justify-between items-end border-b-2 border-primary pb-4">
+            <div>
+              <h1 className="text-3xl font-black text-primary">LAPORAN KEUANGAN</h1>
+              <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Periode: {period}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400 font-bold uppercase">Tanggal Cetak</p>
+              <p className="font-bold">{new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
+              <p className="text-[10px] font-bold text-green-600 uppercase">Pemasukan</p>
+              <p className="text-xl font-black text-green-700">Rp{totals.income.toLocaleString('id-ID')}</p>
+            </div>
+            <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
+              <p className="text-[10px] font-bold text-red-600 uppercase">Pengeluaran</p>
+              <p className="text-xl font-black text-red-700">Rp{totals.expense.toLocaleString('id-ID')}</p>
+            </div>
+            <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+              <p className="text-[10px] font-bold text-blue-600 uppercase">Selisih</p>
+              <p className="text-xl font-black text-blue-700">Rp{(totals.income - totals.expense).toLocaleString('id-ID')}</p>
+            </div>
+          </div>
+
+          <table className="w-full text-sm">
+            <thead className="bg-neutral-dark/10">
+              <tr>
+                <th className="py-2 px-3 text-left font-bold uppercase text-[10px]">Tanggal</th>
+                <th className="py-2 px-3 text-left font-bold uppercase text-[10px]">Transaksi</th>
+                <th className="py-2 px-3 text-left font-bold uppercase text-[10px]">Kategori</th>
+                <th className="py-2 px-3 text-right font-bold uppercase text-[10px]">Jumlah</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransactions.map((t, idx) => (
+                <tr key={t.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-neutral/30'}>
+                  <td className="py-2 px-3">{t.date.toLocaleDateString('id-ID')}</td>
+                  <td className="py-2 px-3 font-bold">{t.title}</td>
+                  <td className="py-2 px-3 text-xs">{t.category}</td>
+                  <td className={`py-2 px-3 text-right font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-500'}`}>
+                    {t.type === 'income' ? '+' : '-'} Rp{t.amount.toLocaleString('id-ID')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="mt-auto pt-10 text-center border-t border-neutral-dark/30">
+            <p className="text-[10px] text-gray-400 font-bold uppercase">Dicetak via NEXUS Finance App</p>
+          </div>
+        </div>
+      </div>
 
       {/* Top Expenses */}
       <section className="px-6">
@@ -742,13 +945,31 @@ export function StatisticsDashboard() {
                     />
                 </div>
 
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-6 py-2.5 bg-neutral rounded-full text-xs font-black text-primary border border-neutral-dark">
-                        Semua <ChevronLeft size={14} className="-rotate-90 opacity-40" />
-                    </button>
-                    <button className="flex items-center gap-2 px-6 py-2.5 bg-neutral rounded-full text-xs font-black text-primary border border-neutral-dark">
-                        Semua Dompet <ChevronLeft size={14} className="-rotate-90 opacity-40" />
-                    </button>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar">
+                    <div className="relative shrink-0">
+                      <select 
+                        value={period}
+                        onChange={(e) => setPeriod(e.target.value as any)}
+                        className="appearance-none bg-neutral px-6 py-2.5 rounded-full text-xs font-black text-primary border border-neutral-dark outline-none pr-8"
+                      >
+                        <option value="Hari">Hari</option>
+                        <option value="Minggu">Minggu</option>
+                        <option value="Bulanan">Bulan</option>
+                        <option value="Tahunan">Tahun</option>
+                        <option value="Rentang">Semua</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                    </div>
+
+                    <div className="relative shrink-0">
+                      <select 
+                        className="appearance-none bg-neutral px-6 py-2.5 rounded-full text-xs font-black text-primary border border-neutral-dark outline-none pr-8"
+                      >
+                        <option value="Semua">Semua Dompet</option>
+                        {wallets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                      </select>
+                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-4 mt-2">
@@ -759,7 +980,7 @@ export function StatisticsDashboard() {
                                     {tx.date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
                                 </div>
                                 <div className="w-10 h-10 bg-neutral-dark/30 rounded-xl flex items-center justify-center relative">
-                                    <span className="text-lg relative z-10">{tx.type === 'income' ? '💰' : '🍔'}</span>
+                                    <span className="text-lg relative z-10">{tx.type === 'income' ? '💰' : '💸'}</span>
                                     <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] rounded-xl" />
                                 </div>
                                 <div className="flex flex-col">
@@ -773,7 +994,10 @@ export function StatisticsDashboard() {
                         </div>
                     ))}
                     
-                    <button className="w-full py-4 mt-4 bg-neutral rounded-[24px] text-xs font-black text-primary uppercase tracking-widest active:scale-95 transition-all">
+                    <button 
+                        onClick={() => setShowAllTransactions?.()}
+                        className="w-full py-4 mt-4 bg-neutral rounded-[24px] text-xs font-black text-primary uppercase tracking-widest active:scale-95 transition-all"
+                    >
                         Lihat Semua Transaksi
                     </button>
                 </div>

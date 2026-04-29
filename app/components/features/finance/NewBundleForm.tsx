@@ -18,14 +18,18 @@ import { toast } from "sonner";
 
 interface NewBundleFormProps {
   onClose: () => void;
+  editBundle?: any;
 }
 
-export const NewBundleForm = ({ onClose }: NewBundleFormProps) => {
+export const NewBundleForm = ({ onClose, editBundle }: NewBundleFormProps) => {
   const { wallets, profile } = useFinanceData();
-  const [name, setName] = useState("");
-  const [walletId, setWalletId] = useState(wallets[0]?.id || "");
-  const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<{name: string, amount: string}[]>([{name: '', amount: ''}, {name: '', amount: ''}]);
+  const [name, setName] = useState(editBundle?.name || "");
+  const [walletId, setWalletId] = useState(editBundle?.walletId || (wallets[0]?.id || ""));
+  const [notes, setNotes] = useState(editBundle?.notes || "");
+  const [items, setItems] = useState<{name: string, amount: string}[]>(
+    editBundle?.items.map((i: any) => ({ name: i.name, amount: i.amount.toString() })) || 
+    [{name: '', amount: ''}, {name: '', amount: ''}]
+  );
   const [showWalletPicker, setShowWalletPicker] = useState(false);
 
   const total = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
@@ -59,23 +63,32 @@ export const NewBundleForm = ({ onClose }: NewBundleFormProps) => {
 
     try {
       if (!profile) return;
-      await FinanceService.addData(auth.currentUser!.uid, profile.linkedUserId || null, 'bundles', {
+      const bundleData = {
         name,
         walletId,
         notes,
-        date: new Date(),
-        status: 'active',
-        items: validItems.map(i => ({
+        updatedAt: new Date(),
+        items: validItems.map((i, index) => ({
           name: i.name,
           amount: Number(i.amount) || 0,
-          isChecked: false
+          isChecked: editBundle ? (editBundle.items[index]?.isChecked || false) : false
         }))
-      });
+      };
 
-      toast.success("Bundle berhasil dibuat");
+      if (editBundle) {
+        await FinanceService.updateData(auth.currentUser!.uid, profile.linkedUserId || null, 'bundles', editBundle.id, bundleData);
+        toast.success("Bundle berhasil diubah");
+      } else {
+        await FinanceService.addData(auth.currentUser!.uid, profile.linkedUserId || null, 'bundles', {
+          ...bundleData,
+          date: new Date(),
+          status: 'active'
+        });
+        toast.success("Bundle berhasil dibuat");
+      }
       onClose();
     } catch (error) {
-      toast.error("Gagal membuat bundle");
+      toast.error(editBundle ? "Gagal mengubah bundle" : "Gagal membuat bundle");
     }
   };
 
@@ -93,7 +106,7 @@ export const NewBundleForm = ({ onClose }: NewBundleFormProps) => {
         <button onClick={onClose} className="p-2 text-gray-400">
           <X size={24} />
         </button>
-        <h2 className="text-xl font-black text-primary">Bundle Baru</h2>
+        <h2 className="text-xl font-black text-primary">{editBundle ? 'Ubah Bundle' : 'Bundle Baru'}</h2>
         <button onClick={handleSubmit} className="p-2 text-primary">
           <Check size={28} />
         </button>

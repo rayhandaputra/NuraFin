@@ -18,6 +18,7 @@ import { auth } from "../../../nexus/firebase";
 import { NewBundleForm } from "./NewBundleForm";
 import { TransactionForm } from "./TransactionForm";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 
 interface BundlePageProps {
   onClose: () => void;
@@ -31,6 +32,8 @@ export const BundlePage = ({ onClose }: BundlePageProps) => {
 
   const activeBundles = bundles.filter(b => b.status === 'active');
   const paidBundles = bundles.filter(b => b.status === 'paid');
+
+  const [editingBundle, setEditingBundle] = useState<Bundle | null>(null);
 
   const handleToggleItem = async (bundle: Bundle, itemIndex: number) => {
     if (!profile) return;
@@ -55,6 +58,35 @@ export const BundlePage = ({ onClose }: BundlePageProps) => {
 
   const handlePay = (bundle: Bundle) => {
     setPayingBundle(bundle);
+  };
+
+  const handleDeleteBundle = async (id: string) => {
+    if (!profile) return;
+
+    const result = await Swal.fire({
+      title: 'Hapus Bundle?',
+      text: "Data bundle akan dihapus secara permanen.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      customClass: {
+        popup: 'rounded-[32px]',
+        confirmButton: 'rounded-xl px-6 py-3 font-bold',
+        cancelButton: 'rounded-xl px-6 py-3 font-bold'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await FinanceService.deleteData(auth.currentUser!.uid, profile.linkedUserId || null, 'bundles', id);
+        toast.success("Bundle dihapus");
+      } catch (error) {
+        toast.error("Gagal menghapus bundle");
+      }
+    }
   };
 
   return (
@@ -93,6 +125,8 @@ export const BundlePage = ({ onClose }: BundlePageProps) => {
                 bundle={bundle} 
                 wallets={wallets}
                 onPay={() => handlePay(bundle)}
+                onEdit={() => setEditingBundle(bundle)}
+                onDelete={() => handleDeleteBundle(bundle.id)}
                 onToggleItem={(itemIndex) => handleToggleItem(bundle, itemIndex)}
               />
             ))
@@ -109,6 +143,7 @@ export const BundlePage = ({ onClose }: BundlePageProps) => {
                 bundle={bundle} 
                 wallets={wallets}
                 onPay={() => {}}
+                onDelete={() => handleDeleteBundle(bundle.id)}
                 isPaid
               />
             ))}
@@ -129,6 +164,12 @@ export const BundlePage = ({ onClose }: BundlePageProps) => {
       <AnimatePresence>
         {showNewBundle && (
           <NewBundleForm onClose={() => setShowNewBundle(false)} />
+        )}
+        {editingBundle && (
+          <NewBundleForm 
+            editBundle={editingBundle} 
+            onClose={() => setEditingBundle(null)} 
+          />
         )}
         {payingBundle && (
           <TransactionForm 
@@ -152,18 +193,23 @@ function BundleCard({
   wallets, 
   onPay, 
   onToggleItem,
+  onEdit,
+  onDelete,
   isPaid 
 }: { 
   bundle: Bundle, 
   wallets: any[], 
   onPay: () => void, 
   onToggleItem?: (index: number) => void,
+  onEdit?: () => void,
+  onDelete?: () => void,
   isPaid?: boolean 
 }) {
   const total = bundle.items.reduce((acc, item) => acc + item.amount, 0);
   const checkedItemsTotal = bundle.items.filter(i => i.isChecked).reduce((acc, item) => acc + item.amount, 0);
   const wallet = wallets.find(w => w.id === bundle.walletId);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
   return (
     <div className="bg-white rounded-[32px] overflow-hidden border border-neutral-dark shadow-sm">
@@ -181,9 +227,41 @@ function BundleCard({
               </p>
             </div>
           </div>
-          <button className="p-2 text-gray-400">
-            <MoreVertical size={20} />
-          </button>
+          <div className="relative">
+            <button onClick={() => setShowOptions(!showOptions)} className="p-2 text-gray-400">
+              <MoreVertical size={20} />
+            </button>
+            <AnimatePresence>
+              {showOptions && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowOptions(false)} />
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-32 bg-white rounded-2xl shadow-xl border border-neutral-dark z-20 overflow-hidden"
+                  >
+                    {!isPaid && onEdit && (
+                      <button 
+                        onClick={() => { onEdit(); setShowOptions(false); }}
+                        className="w-full px-4 py-3 flex items-center gap-2 hover:bg-neutral transition-colors text-[10px] font-black uppercase text-gray-700"
+                      >
+                        Ubah
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button 
+                        onClick={() => { onDelete(); setShowOptions(false); }}
+                        className="w-full px-4 py-3 flex items-center gap-2 hover:bg-neutral transition-colors text-[10px] font-black uppercase text-accent"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         <div className="h-px bg-neutral-dark w-full" />

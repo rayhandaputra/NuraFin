@@ -16,6 +16,7 @@ import {
 import { FinanceService } from "../../../services/financeService";
 import { auth } from "../../../nexus/firebase";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { useFinanceData } from "../../../hooks/useFinance";
 
 interface Budget {
@@ -69,13 +70,27 @@ export function BudgetPage({ onClose }: { onClose: () => void }) {
 
   const handleDeleteBudget = async (id: string) => {
     const user = auth.currentUser;
-    if (!user || !profile || !confirm("Hapus anggaran ini?")) return;
+    if (!user || !profile) return;
 
-    try {
-      await FinanceService.deleteData(user.uid, profile.linkedUserId || null, 'budgets', id);
-      toast.success("Anggaran dihapus");
-    } catch (error: any) {
-      toast.error(`Gagal: ${error.message}`);
+    const result = await Swal.fire({
+      title: 'Hapus Anggaran?',
+      text: "Data anggaran akan dihapus secara permanen.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      customClass: { popup: 'rounded-[32px]' }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await FinanceService.deleteData(user.uid, profile.linkedUserId || null, 'budgets', id);
+        toast.success("Anggaran dihapus");
+      } catch (error: any) {
+        toast.error(`Gagal: ${error.message}`);
+      }
     }
   };
 

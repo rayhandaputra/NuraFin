@@ -15,6 +15,7 @@ import {
 import { auth } from "../../../nexus/firebase";
 import { FinanceService } from "../../../services/financeService";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { useFinanceData, RecurringTransaction } from "../../../hooks/useFinance";
 
 export function RecurringPage({ onClose }: { onClose: () => void }) {
@@ -25,12 +26,27 @@ export function RecurringPage({ onClose }: { onClose: () => void }) {
 
   const handleDelete = async (id: string) => {
     const user = auth.currentUser;
-    if (!user || !profile || !confirm("Hapus transaksi berulang ini?")) return;
-    try {
-      await FinanceService.deleteData(user.uid, profile.linkedUserId || null, 'recurring_transactions', id);
-      toast.success("Transaksi berulang dihapus");
-    } catch (error: any) {
-      toast.error(`Gagal: ${error.message}`);
+    if (!user || !profile) return;
+
+    const result = await Swal.fire({
+      title: 'Hapus Transaksi?',
+      text: "Data transaksi berulang akan dihapus permanen.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      customClass: { popup: 'rounded-[32px]' }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await FinanceService.deleteData(user.uid, profile.linkedUserId || null, 'recurring_transactions', id);
+        toast.success("Transaksi berulang dihapus");
+      } catch (error: any) {
+        toast.error(`Gagal: ${error.message}`);
+      }
     }
   };
 
@@ -126,16 +142,27 @@ export function RecurringPage({ onClose }: { onClose: () => void }) {
     const user = auth.currentUser;
     if (!user || !profile) return;
 
-    // We might want to let user select wallet, but for now use the one in rec or default
     const walletId = rec.walletId || (wallets.length > 0 ? wallets[0].id : 'cash');
     
-    if (!confirm(`Eksekusi pembayaran ${rec.title} sebesar Rp${rec.amount.toLocaleString('id-ID')}?`)) return;
+    const result = await Swal.fire({
+      title: 'Konfirmasi Bayar?',
+      text: `Eksekusi pembayaran ${rec.title} sebesar Rp${rec.amount.toLocaleString('id-ID')}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#7c4dff',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Bayar Sekarang',
+      cancelButtonText: 'Batal',
+      customClass: { popup: 'rounded-[32px]' }
+    });
 
-    try {
-      await FinanceService.executeRecurringPayment(user.uid, profile.linkedUserId || null, rec, walletId);
-      toast.success(`Pembayaran ${rec.title} berhasil dieksekusi`);
-    } catch (error: any) {
-      toast.error(`Gagal: ${error.message}`);
+    if (result.isConfirmed) {
+      try {
+        await FinanceService.executeRecurringPayment(user.uid, profile.linkedUserId || null, rec, walletId);
+        toast.success(`Pembayaran ${rec.title} berhasil dieksekusi`);
+      } catch (error: any) {
+        toast.error(`Gagal: ${error.message}`);
+      }
     }
   };
 

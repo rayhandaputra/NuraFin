@@ -1,6 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, doc, collection, getDoc, getDocs, setDoc, updateDoc, query, where, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, collection, getDoc, getDocs, setDoc, updateDoc, query, where, getDocFromServer, increment } from 'firebase/firestore';
+
+export { increment };
 
 // setting config firebase
 console.log("Variabel yang terbaca:", import.meta.env);

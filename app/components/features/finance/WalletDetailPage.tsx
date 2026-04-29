@@ -19,7 +19,7 @@ import {
   Wallet as WalletIcon
 } from "lucide-react";
 import { useFinanceData, Wallet, Transaction } from "../../../hooks/useFinance";
-import { auth } from "../../../nexus/firebase";
+import { auth, increment } from "../../../nexus/firebase";
 import { FinanceService } from "../../../services/financeService";
 import { toast } from "sonner";
 
@@ -29,7 +29,7 @@ interface WalletDetailPageProps {
 }
 
 export function WalletDetailPage({ wallet, onClose }: WalletDetailPageProps) {
-  const { transactions, profile } = useFinanceData('Semua');
+  const { transactions, profile, wallets } = useFinanceData('Semua');
   const [activePeriod, setActivePeriod] = useState<'Mingguan' | 'Bulanan'>('Bulanan');
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -91,6 +91,62 @@ export function WalletDetailPage({ wallet, onClose }: WalletDetailPageProps) {
       } catch (error: any) {
         toast.error(`Gagal: ${error.message}`);
       }
+    }
+  };
+
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [transferAmount, setTransferAmount] = useState("");
+  const [targetWalletId, setTargetWalletId] = useState("");
+
+  const handleTransfer = async () => {
+    const user = auth.currentUser;
+    if (!user || !profile || !targetWalletId || isNaN(Number(transferAmount))) return;
+    
+    if (Number(transferAmount) > wallet.balance && wallet.type !== 'credit') {
+        toast.error("Saldo tidak mencukupi");
+        return;
+    }
+
+    try {
+      await FinanceService.addData(user.uid, profile.linkedUserId || null, 'transactions', {
+        title: `Transfer to ${wallets.find(w => w.id === targetWalletId)?.name}`,
+        amount: Number(transferAmount),
+        category: 'Transfer',
+        type: 'expense',
+        date: new Date(),
+        walletId: wallet.id,
+        notes: `Transfer ke dompet lain`
+      });
+
+      await FinanceService.addData(user.uid, profile.linkedUserId || null, 'transactions', {
+        title: `Transfer from ${wallet.name}`,
+        amount: Number(transferAmount),
+        category: 'Transfer',
+        type: 'income',
+        date: new Date(),
+        walletId: targetWalletId,
+        notes: `Penerimaan transfer dari ${wallet.name}`
+      });
+
+      await FinanceService.updateData(user.uid, profile.linkedUserId || null, 'wallets', wallet.id, {
+        balance: increment(-Number(transferAmount))
+      });
+
+      await FinanceService.updateData(user.uid, profile.linkedUserId || null, 'wallets', targetWalletId, {
+        balance: increment(Number(transferAmount))
+      });
+
+      setIsTransferring(false);
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Transfer antar dompet berhasil.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-[32px]' }
+      });
+    } catch (error: any) {
+      toast.error(`Gagal: ${error.message}`);
     }
   };
 
@@ -304,7 +360,12 @@ export function WalletDetailPage({ wallet, onClose }: WalletDetailPageProps) {
         <div className="grid grid-cols-3 gap-3">
              <ActionButton icon={<ArrowUpRight />} label="Pengeluaran" color="bg-red-100 text-accent" />
              <ActionButton icon={<ArrowDownLeft />} label="Pemasukan" color="bg-green-100 text-green-600" />
-             <ActionButton icon={<ArrowLeftRight />} label="Transfer" color="bg-blue-100 text-blue-600" />
+             <button onClick={() => setIsTransferring(true)} className="flex flex-col items-center gap-2">
+                 <div className={`w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm active:scale-95 transition-all`}>
+                    <ArrowLeftRight />
+                 </div>
+                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tight">Transfer</span>
+             </button>
         </div>
 
         {/* Recent Transactions */}
@@ -340,6 +401,60 @@ export function WalletDetailPage({ wallet, onClose }: WalletDetailPageProps) {
             </div>
         </div>
       </div>
+
+      {/* Update Balance Modal */}
+      <AnimatePresence>
+        {isTransferring && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-6">
+            <motion.div 
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               className="absolute inset-0 bg-[#1e293b]/40 backdrop-blur-sm"
+               onClick={() => setIsTransferring(false)}
+            />
+            <motion.div 
+               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+               className="bg-white rounded-[40px] p-8 w-full max-w-sm relative z-10 shadow-2xl flex flex-col gap-6"
+            >
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-black text-[#1e293b]">Transfer Antar Dompet</h3>
+                    <button onClick={() => setIsTransferring(false)} className="p-2 bg-neutral rounded-full"><X size={18} /></button>
+                </div>
+                <div className="flex flex-col gap-4">
+                    <div className="bg-[#f1f5f9] p-6 rounded-[28px]">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Pilih Dompet Tujuan</p>
+                        <select 
+                            value={targetWalletId}
+                            onChange={(e) => setTargetWalletId(e.target.value)}
+                            className="bg-transparent text-sm font-black outline-none w-full appearance-none"
+                        >
+                            <option value="">Pilih Dompet...</option>
+                            {wallets.filter(w => w.id !== wallet.id).map(w => (
+                                <option key={w.id} value={w.id}>{w.name} (Rp{w.balance.toLocaleString()})</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="bg-[#f1f5f9] p-6 rounded-[28px]">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Jumlah Transfer (Rp)</p>
+                        <input 
+                            type="number" 
+                            value={transferAmount}
+                            onChange={(e) => setTransferAmount(e.target.value)}
+                            placeholder="0"
+                            className="bg-transparent text-2xl font-black outline-none w-full"
+                        />
+                    </div>
+                </div>
+                <button 
+                    onClick={handleTransfer}
+                    disabled={!targetWalletId || !transferAmount}
+                    className="bg-[#1e293b] text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50"
+                >
+                    Konfirmasi Transfer
+                </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Update Balance Modal */}
       <AnimatePresence>

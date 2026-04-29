@@ -5,9 +5,42 @@ import { extractReceiptData, ExtractedReceipt } from "../../../nexus/ai";
 
 export const ReceiptScanner = ({ onSave }: { onSave?: (data: ExtractedReceipt) => void }) => {
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<"compressing" | "scanning" | null>(null);
   const [receipt, setReceipt] = useState<ExtractedReceipt | null>(null);
   const [isSplitting, setIsSplitting] = useState(false);
   const [participants, setParticipants] = useState(2);
+
+  const compressImage = (base64: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Max size 1000px for better AI readability but small file size
+        const MAX_SIZE = 1000;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8)); // 0.8 high enough quality for AI
+      };
+      img.src = base64;
+    });
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -17,16 +50,26 @@ export const ReceiptScanner = ({ onSave }: { onSave?: (data: ExtractedReceipt) =
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64 = reader.result as string;
+        let base64 = reader.result as string;
+        
+        // Check if file size > 1MB (1,048,576 bytes)
+        if (file.size > 1024 * 1024) {
+          setLoadingStep("compressing");
+          base64 = await compressImage(base64);
+        }
+
+        setLoadingStep("scanning");
         const data = await extractReceiptData(base64);
         setReceipt(data);
         setLoading(false);
+        setLoadingStep(null);
       };
       reader.readAsDataURL(file);
     } catch (err) {
       console.error(err);
       setLoading(false);
-      alert("Failed to analyze receipt. Try again.");
+      setLoadingStep(null);
+      alert("Gagal menganalisis struk. Silakan coba lagi.");
     }
   };
 
@@ -59,7 +102,9 @@ export const ReceiptScanner = ({ onSave }: { onSave?: (data: ExtractedReceipt) =
       {loading && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <Loader2 size={48} className="text-primary animate-spin" />
-          <p className="font-bold text-gray-500">AI sedang membaca struk Anda...</p>
+          <p className="font-bold text-gray-500 animate-pulse text-center px-6">
+            {loadingStep === 'compressing' ? 'Mengompres gambar...' : 'AI sedang membaca struk Anda...'}
+          </p>
         </div>
       )}
 

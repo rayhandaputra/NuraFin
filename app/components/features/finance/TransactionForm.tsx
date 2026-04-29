@@ -210,131 +210,134 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
         <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
       </div>
 
-      {/* Top Header */}
-      <div className="p-6 pt-2 flex items-center justify-between">
-        <div className="flex bg-neutral-dark rounded-[24px] p-1 w-fit">
-          <button 
-            onClick={() => {
-              setType('pengeluaran');
-              setSelectedCategory(null);
-            }}
-            className={`px-6 py-3 rounded-[20px] text-sm font-bold transition-all ${type === 'pengeluaran' ? 'bg-[#1e293b] text-white shadow-lg' : 'text-gray-500'}`}
-          >
-            Pengeluaran
-          </button>
-          <button 
-            onClick={() => {
-              setType('pemasukan');
-              setSelectedCategory(null);
-            }}
-            className={`px-6 py-3 rounded-[20px] text-sm font-bold transition-all ${type === 'pemasukan' ? 'bg-[#1e293b] text-white shadow-lg' : 'text-gray-500'}`}
-          >
-            Pemasukan
+      {/* Content Area - Scrollable */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Top Header */}
+        <div className="p-6 pt-2 flex items-center justify-between">
+          <div className="flex bg-neutral-dark rounded-[24px] p-1 w-fit">
+            <button 
+              onClick={() => {
+                setType('pengeluaran');
+                setSelectedCategory(null);
+              }}
+              className={`px-6 py-2.5 rounded-[20px] text-[13px] font-bold transition-all ${type === 'pengeluaran' ? 'bg-[#1e293b] text-white shadow-lg' : 'text-gray-500'}`}
+            >
+              Pengeluaran
+            </button>
+            <button 
+              onClick={() => {
+                setType('pemasukan');
+                setSelectedCategory(null);
+              }}
+              className={`px-6 py-2.5 rounded-[20px] text-[13px] font-bold transition-all ${type === 'pemasukan' ? 'bg-[#1e293b] text-white shadow-lg' : 'text-gray-500'}`}
+            >
+              Pemasukan
+            </button>
+          </div>
+          <button className="p-3 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-neutral-dark">
+            <Camera size={18} className="text-gray-400" />
           </button>
         </div>
-        <button className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-neutral-dark">
-          <Camera size={20} className="text-gray-400" />
-        </button>
-      </div>
 
-      {/* Hero Category Selection */}
-      <div className="px-6 py-4 flex flex-col items-center gap-4">
-        {categoriesLoading ? (
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Memuat kategori...</div>
-        ) : (
-            <div className="flex items-center gap-2">
-                {selectedCategory && (
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${selectedCategory.color} bg-opacity-10 ${selectedCategory.color.replace('bg-', 'text-')}`}>
-                        <CategoryIcon size={14} />
-                        <span className="text-[10px] font-bold uppercase tracking-tight">{selectedCategory.name}</span>
-                    </div>
-                )}
-                {selectedSubCategory && (
-                    <div className="bg-neutral-dark px-4 py-2 rounded-full text-[10px] font-bold text-gray-500 uppercase tracking-tight">
-                        {selectedSubCategory}
-                    </div>
-                )}
-            </div>
-        )}
-        
-        <div className="flex flex-col items-center gap-2">
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-[#94a3b8]">JUMLAH</div>
-          <div className="flex items-center gap-4">
-            <div className="bg-neutral-dark px-3 py-1.5 rounded-xl flex items-center gap-2 text-sm font-bold text-[#64748b]">
-              Rp <ChevronDown size={14} />
-            </div>
-            <div className="text-6xl font-black text-[#1e293b] tracking-tighter">
-              {Number(amount).toLocaleString('id-ID')}
+        {/* Hero Category Selection */}
+        <div className="px-6 py-2 flex flex-col items-center gap-2">
+          {categoriesLoading ? (
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Memuat kategori...</div>
+          ) : (
+              <div className="flex items-center gap-2">
+                  {selectedCategory && (
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${selectedCategory.color} bg-opacity-10 ${selectedCategory.color.replace('bg-', 'text-')}`}>
+                          <CategoryIcon size={12} />
+                          <span className="text-[9px] font-bold uppercase tracking-tight">{selectedCategory.name}</span>
+                      </div>
+                  )}
+                  {selectedSubCategory && (
+                      <div className="bg-neutral-dark px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-500 uppercase tracking-tight">
+                          {selectedSubCategory}
+                      </div>
+                  )}
+              </div>
+          )}
+          
+          <div className="flex flex-col items-center gap-1">
+            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest text-[#94a3b8]">JUMLAH</div>
+            <div className="flex items-center gap-3">
+              <div className="bg-neutral-dark px-2 py-1 rounded-lg flex items-center gap-1.5 text-xs font-bold text-[#64748b]">
+                Rp <ChevronDown size={12} />
+              </div>
+              <div className="text-4xl sm:text-5xl font-black text-[#1e293b] tracking-tighter">
+                {Number(amount).toLocaleString('id-ID')}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Form Fields */}
-      <div className="flex-1 px-6 flex flex-col gap-4 mt-8">
-        <div className="bg-white border-2 border-neutral-dark rounded-[24px] p-4 flex items-center gap-4 shadow-sm focus-within:border-primary transition-colors">
-          <FileText size={20} className="text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="Judul" 
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 bg-transparent border-none outline-none font-bold text-[#1e293b] placeholder:text-gray-300"
-          />
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-4">
-            <button 
-                onClick={() => setShowCategoryPicker(true)}
-                className="flex-1 bg-white border-2 border-neutral-dark rounded-[24px] px-6 py-4 flex items-center justify-between shadow-sm font-bold text-[#1e293b] active:border-primary"
-            >
-                <div className="flex items-center gap-3">
-                    <CategoryIcon size={20} className="text-gray-400" />
-                    <span>{selectedCategory?.name || 'Pilih Kategori'}</span>
-                </div>
-                <ChevronDown size={18} className="text-gray-400" />
-            </button>
-
-            <button 
-                onClick={() => setShowWalletPicker(true)}
-                className="flex-1 bg-white border-2 border-neutral-dark rounded-[24px] px-6 py-4 flex items-center justify-between shadow-sm font-bold text-[#1e293b] active:border-primary"
-            >
-                <div className="flex items-center gap-3 truncate">
-                    <WalletIcon size={20} className="text-gray-400" />
-                    <span className="truncate">{selectedWallet?.name || 'Pilih Dompet'}</span>
-                </div>
-                <ChevronDown size={18} className="text-gray-400" />
-            </button>
+        {/* Form Fields */}
+        <div className="px-6 flex flex-col gap-3 mt-4 pb-6">
+          <div className="bg-white border-2 border-neutral-dark rounded-[20px] p-3.5 flex items-center gap-4 shadow-sm focus-within:border-primary transition-colors">
+            <FileText size={18} className="text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Judul" 
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="flex-1 bg-transparent border-none outline-none font-bold text-[#1e293b] placeholder:text-gray-300 text-sm"
+            />
           </div>
 
-          <div className="flex gap-4">
-            <button 
-                onClick={() => {
-                    if (selectedCategory && selectedCategory.subCategories?.length > 0) {
-                        setShowSubCategoryPicker(true);
-                    } else {
-                        toast.error('Pilih kategori dengan sub-kategori terlebih dahulu');
-                    }
-                }}
-                className={`flex-1 bg-white border-2 border-neutral-dark rounded-[24px] px-6 py-4 flex items-center justify-between shadow-sm font-bold text-[#1e293b] active:border-primary ${(!selectedCategory || !selectedCategory.subCategories?.length) ? 'opacity-50' : ''}`}
-            >
-                <div className="flex items-center gap-3 truncate">
-                    <LayoutGrid size={20} className="text-gray-400" />
-                    <span className="truncate">{selectedSubCategory || 'Sub-Kategori'}</span>
-                </div>
-                <ChevronDown size={18} className="text-gray-400" />
-            </button>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <button 
+                  onClick={() => setShowCategoryPicker(true)}
+                  className="flex-1 bg-white border-2 border-neutral-dark rounded-[20px] px-4 py-3.5 flex items-center justify-between shadow-sm font-bold text-[#1e293b] active:border-primary overflow-hidden"
+              >
+                  <div className="flex items-center gap-2.5 truncate">
+                      <CategoryIcon size={18} className="text-gray-400" />
+                      <span className="truncate text-sm">{selectedCategory?.name || 'Kategori'}</span>
+                  </div>
+                  <ChevronDown size={14} className="text-gray-400 shrink-0" />
+              </button>
 
-            <div className="flex-1 bg-white border-2 border-neutral-dark rounded-[24px] p-4 flex items-center gap-4 shadow-sm focus-within:border-primary transition-colors">
-              <Edit3 size={20} className="text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Catatan..." 
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none font-bold text-[#1e293b] placeholder:text-gray-300 text-sm"
-              />
+              <button 
+                  onClick={() => setShowWalletPicker(true)}
+                  className="flex-1 bg-white border-2 border-neutral-dark rounded-[20px] px-4 py-3.5 flex items-center justify-between shadow-sm font-bold text-[#1e293b] active:border-primary overflow-hidden"
+              >
+                  <div className="flex items-center gap-2.5 truncate">
+                      <WalletIcon size={18} className="text-gray-400" />
+                      <span className="truncate text-sm">{selectedWallet?.name || 'Dompet'}</span>
+                  </div>
+                  <ChevronDown size={14} className="text-gray-400 shrink-0" />
+              </button>
+            </div>
+
+            <div className="flex gap-3 text-xs">
+              <button 
+                  onClick={() => {
+                      if (selectedCategory && selectedCategory.subCategories?.length > 0) {
+                          setShowSubCategoryPicker(true);
+                      } else {
+                          toast.error('Pilih kategori dengan sub-kategori terlebih dahulu');
+                      }
+                  }}
+                  className={`flex-1 bg-white border-2 border-neutral-dark rounded-[20px] px-4 py-3.5 flex items-center justify-between shadow-sm font-bold text-[#1e293b] active:border-primary ${(!selectedCategory || !selectedCategory.subCategories?.length) ? 'opacity-50' : ''}`}
+              >
+                  <div className="flex items-center gap-2.5 truncate">
+                      <LayoutGrid size={18} className="text-gray-400" />
+                      <span className="truncate">{selectedSubCategory || 'Sub'}</span>
+                  </div>
+                  <ChevronDown size={14} className="text-gray-400 shrink-0" />
+              </button>
+
+              <div className="flex-1 bg-white border-2 border-neutral-dark rounded-[20px] p-3.5 flex items-center gap-3 shadow-sm focus-within:border-primary transition-colors">
+                <Edit3 size={18} className="text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Catatan..." 
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="flex-1 bg-transparent border-none outline-none font-bold text-[#1e293b] placeholder:text-gray-300 text-[13px]"
+                />
+              </div>
             </div>
           </div>
         </div>

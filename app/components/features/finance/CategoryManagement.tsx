@@ -19,6 +19,7 @@ import {
 import { FinanceService } from "../../../services/financeService";
 import { auth } from "../../../nexus/firebase";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { useFinanceData, Category } from "../../../hooks/useFinance";
 
 export function CategoryManagement({ onClose }: { onClose: () => void }) {
@@ -36,13 +37,31 @@ export function CategoryManagement({ onClose }: { onClose: () => void }) {
 
   const handleDeleteCategory = async (id: string) => {
     const user = auth.currentUser;
-    if (!user || !profile || !confirm("Hapus kategori ini? Semua transaksi dengan kategori ini mungkin perlu disesuaikan.")) return;
+    if (!user || !profile) return;
 
-    try {
-      await FinanceService.deleteData(user.uid, profile.linkedUserId || null, 'categories', id);
-      toast.success("Kategori dihapus");
-    } catch (error: any) {
-      toast.error(`Gagal menghapus: ${error.message}`);
+    const result = await Swal.fire({
+      title: 'Hapus Kategori?',
+      text: "Semua transaksi dengan kategori ini mungkin perlu disesuaikan.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      customClass: {
+        popup: 'rounded-[32px]',
+        confirmButton: 'rounded-xl px-6 py-3 font-bold',
+        cancelButton: 'rounded-xl px-6 py-3 font-bold'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await FinanceService.deleteData(user.uid, profile.linkedUserId || null, 'categories', id);
+        toast.success("Kategori dihapus");
+      } catch (error: any) {
+        toast.error(`Gagal menghapus: ${error.message}`);
+      }
     }
   };
 
@@ -69,22 +88,36 @@ export function CategoryManagement({ onClose }: { onClose: () => void }) {
   };
 
   const handleRemoveSubCategory = async (categoryId: string, subName: string) => {
-    if (!confirm(`Hapus sub-kategori "${subName}"?`)) return;
-
     const user = auth.currentUser;
     if (!user || !profile) return;
 
-    try {
-      const category = categories.find(c => c.id === categoryId);
-      if (!category) return;
+    const result = await Swal.fire({
+      title: 'Hapus Sub-kategori?',
+      text: `Ingin menghapus "${subName}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal',
+      customClass: {
+        popup: 'rounded-[32px]'
+      }
+    });
 
-      const newSubCategories = (category.subCategories || []).filter(s => s !== subName);
-      await FinanceService.updateData(user.uid, profile.linkedUserId || null, 'categories', categoryId, {
-        subCategories: newSubCategories
-      });
-      toast.success("Sub-kategori dihapus");
-    } catch (error: any) {
-      toast.error(`Gagal: ${error.message}`);
+    if (result.isConfirmed) {
+      try {
+        const category = categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        const newSubCategories = (category.subCategories || []).filter(s => s !== subName);
+        await FinanceService.updateData(user.uid, profile.linkedUserId || null, 'categories', categoryId, {
+          subCategories: newSubCategories
+        });
+        toast.success("Sub-kategori dihapus");
+      } catch (error: any) {
+        toast.error(`Gagal: ${error.message}`);
+      }
     }
   };
 
@@ -295,6 +328,8 @@ function NewCategoryForm({ onClose, editData }: { onClose: () => void, editData?
     { name: 'LayoutGrid', icon: LayoutGrid }
   ];
 
+  const PreviewIcon = icons.find(i => i.name === selectedIcon)?.icon || LayoutGrid;
+
   const handleAddSub = () => {
     if (newSubName.trim() && !subCategories.includes(newSubName.trim())) {
       setSubCategories([...subCategories, newSubName.trim()]);
@@ -362,7 +397,7 @@ function NewCategoryForm({ onClose, editData }: { onClose: () => void, editData?
           <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-4">Nama Kategori</label>
           <div className="bg-white p-6 rounded-[32px] border border-neutral-dark shadow-sm flex items-center gap-4">
              <div className={`w-12 h-12 ${selectedColor} bg-opacity-10 rounded-xl flex items-center justify-center ${selectedColor.replace('bg-', 'text-')}`}>
-               <LayoutGrid size={24} />
+               <PreviewIcon size={24} />
              </div>
              <input 
                type="text" 
@@ -443,7 +478,7 @@ function NewCategoryForm({ onClose, editData }: { onClose: () => void, editData?
                 <button 
                   key={item.name}
                   onClick={() => setSelectedIcon(item.name)}
-                  className={`w-full aspect-square rounded-[20px] flex items-center justify-center transition-all ${selectedIcon === item.name ? 'bg-primary text-white shadow-lg scale-110' : 'bg-neutral text-gray-400'}`}
+                  className={`w-full aspect-square rounded-[20px] flex items-center justify-center transition-all ${selectedIcon === item.name ? `${selectedColor} text-white shadow-lg scale-110` : 'bg-neutral text-gray-400'}`}
                 >
                   <Icon size={24} />
                 </button>

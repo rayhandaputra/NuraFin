@@ -159,6 +159,29 @@ export const FinanceService = {
     }
   },
 
+  async deleteTransaction(uid: string, linkedUid: string | null, transaction: any) {
+    const ownerId = this.getDataPath(uid, linkedUid);
+    const batch = writeBatch(db);
+    
+    // 1. Delete Transaction
+    batch.delete(doc(db, 'users', ownerId, 'transactions', transaction.id));
+    
+    // 2. Reverse Wallet Balance
+    if (transaction.walletId) {
+        batch.update(doc(db, 'users', ownerId, 'wallets', transaction.walletId), {
+            balance: increment(transaction.type === 'income' ? -transaction.amount : transaction.amount),
+            updatedAt: serverTimestamp()
+        });
+    }
+
+    try {
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `users/${ownerId}/transactions/${transaction.id}`);
+      throw error;
+    }
+  },
+
   // --- Specific Operations ---
   
   async toggleNotification(uid: string, linkedUid: string | null, id: string, read: boolean) {
@@ -194,7 +217,14 @@ export const FinanceService = {
       updatedAt: serverTimestamp()
     });
 
-    // 3. Update related Debt if exists
+    // 3. Update Wallet Balance
+    const walletRef = doc(db, 'users', ownerId, 'wallets', walletId);
+    batch.update(walletRef, {
+      balance: increment(recurring.type === 'income' ? recurring.amount : -recurring.amount),
+      updatedAt: serverTimestamp()
+    });
+
+    // 4. Update related Debt if exists
     if (recurring.relatedId) {
       const debtRef = doc(db, 'users', ownerId, 'debts', recurring.relatedId);
       // We check the debt first (this is outside batch for logic but we can do it)
