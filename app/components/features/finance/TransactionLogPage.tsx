@@ -21,7 +21,12 @@ import { toast } from "sonner";
 import * as XLSX from 'xlsx';
 import { toPng } from 'html-to-image';
 
-export function TransactionLogPage({ onClose }: { onClose: () => void }) {
+interface TransactionLogPageProps {
+  onClose: () => void;
+  onEditTransaction?: (tx: Transaction) => void;
+}
+
+export function TransactionLogPage({ onClose, onEditTransaction }: TransactionLogPageProps) {
   const dragControls = useDragControls();
   const reportRef = useRef<HTMLDivElement>(null);
   const [activeFilter, setActiveFilter] = useState<'Hari' | 'Minggu' | 'Bulan' | 'Tahun' | 'Semua'>('Semua');
@@ -284,7 +289,11 @@ export function TransactionLogPage({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             filteredTransactions.map(tx => (
-              <div key={tx.id} className="bg-white p-5 rounded-[32px] border border-neutral-dark flex items-center justify-between group active:scale-[0.98] transition-all shadow-sm">
+              <div 
+                key={tx.id} 
+                onClick={() => onEditTransaction?.(tx)}
+                className="bg-white p-5 rounded-[32px] border border-neutral-dark flex items-center justify-between group active:scale-[0.98] transition-all shadow-sm cursor-pointer hover:border-primary/20"
+              >
                 <div className="flex items-center gap-4">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${tx.type === 'income' ? 'bg-secondary/5 text-secondary' : 'bg-accent/5 text-accent'}`}>
                     {tx.type === 'income' ? <ArrowDownLeft size={24} /> : <ArrowUpRight size={24} />}

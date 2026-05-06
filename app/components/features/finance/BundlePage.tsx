@@ -176,7 +176,7 @@ export const BundlePage = ({ onClose }: BundlePageProps) => {
             onClose={() => setPayingBundle(null)}
             initialData={{
               title: `Belanja ${payingBundle.name}`,
-              amount: payingBundle.items.filter(i => i.isChecked).reduce((acc, i) => acc + i.amount, 0).toString(),
+              amount: payingBundle.items.filter(i => i.isChecked).reduce((acc, i) => acc + i.amount, 0),
               notes: `Bundle: ${payingBundle.name} ${payingBundle.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`,
               walletId: payingBundle.walletId
             }}

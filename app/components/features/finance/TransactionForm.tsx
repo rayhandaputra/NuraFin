@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { 
   X, 
@@ -20,41 +20,48 @@ import {
   Activity,
   User,
   Wallet as WalletIcon,
-  CreditCard
+  CreditCard,
+  Trash2
 } from 'lucide-react';
-import { auth } from '../../../nexus/firebase';
+import { auth, db } from '../../../nexus/firebase';
 import { FinanceService } from '../../../services/financeService';
 import { toast } from 'sonner';
-import { useFinanceData, Category, Bundle } from '../../../hooks/useFinance';
+import Swal from 'sweetalert2';
+import { increment } from 'firebase/firestore';
+import { useFinanceData, Category, Bundle, Transaction } from '../../../hooks/useFinance';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface TransactionFormProps {
   onClose: () => void;
-  initialData?: {
-    amount?: string;
-    title?: string;
-    notes?: string;
-    walletId?: string;
-  };
+  initialData?: Partial<Transaction>;
   relatedBundle?: Bundle;
 }
 
 export function TransactionForm({ onClose, initialData, relatedBundle }: TransactionFormProps) {
   const dragControls = useDragControls();
   const { categories, wallets, loading: categoriesLoading, profile } = useFinanceData();
-  const [type, setType] = useState<'pemasukan' | 'pengeluaran'>('pengeluaran');
-  const [amount, setAmount] = useState(initialData?.amount || '0');
+  
+  const isEditing = !!initialData?.id;
+  
+  const [type, setType] = useState<'pemasukan' | 'pengeluaran'>(initialData?.type === 'income' ? 'pemasukan' : 'pengeluaran');
+  const [amount, setAmount] = useState(initialData?.amount?.toString() || '0');
   const [title, setTitle] = useState(initialData?.title || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
   
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>(initialData?.subCategory || "");
   const [selectedWalletId, setSelectedWalletId] = useState<string>(initialData?.walletId || "");
   
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
   const [showWalletPicker, setShowWalletPicker] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [transactionDate, setTransactionDate] = useState<Date>(
+    initialData?.date 
+      ? new Date(initialData.date) 
+      : new Date()
+  );
 
   useEffect(() => {
     if (wallets.length > 0 && !selectedWalletId) {
@@ -69,14 +76,16 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
 
   useEffect(() => {
     if (filteredCategories.length > 0 && !selectedCategory) {
+      if (isEditing && initialData?.category) {
+        const found = filteredCategories.find(c => c.name === initialData.category);
+        if (found) {
+          setSelectedCategory(found);
+          return;
+        }
+      }
       setSelectedCategory(filteredCategories[0]);
     }
-  }, [filteredCategories, selectedCategory]);
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, []);
+  }, [filteredCategories, selectedCategory, isEditing, initialData]);
 
   const handleKeypadPress = (val: string) => {
     if (val === 'backspace') {
@@ -117,10 +126,49 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
         walletId: selectedWalletId || null,
         type: type === 'pemasukan' ? 'income' : 'expense',
         notes: notes.trim(),
-        date: new Date(),
+        date: new Date(transactionDate),
       };
 
-      await FinanceService.addData(userId, linkedUserId, 'transactions', transactionData);
+      if (isEditing && initialData?.id) {
+        await FinanceService.updateTransaction(userId, linkedUserId, initialData.id, initialData, transactionData);
+        toast.success('Transaksi diperbarui');
+      } else {
+        await FinanceService.addData(userId, linkedUserId, 'transactions', transactionData);
+        
+        // Update Wallet Balance for New Transaction
+        if (selectedWalletId) {
+          const numericAmount = Number(amount);
+          const wallet = wallets.find(w => w.id === selectedWalletId);
+          
+          if (wallet) {
+            let incrementVal = type === 'pemasukan' ? numericAmount : -numericAmount;
+            if (wallet.type === 'credit') {
+              incrementVal = -incrementVal; // Credit cards increase balance (debt) on expense
+            }
+            
+            await FinanceService.updateData(userId, linkedUserId, 'wallets', selectedWalletId, {
+              balance: increment(incrementVal)
+            });
+
+            // Auto-debt creation for credit wallets
+            if (wallet.type === 'credit' && type === 'pengeluaran') {
+              const debtData = {
+                personName: wallet.name,
+                amount: numericAmount,
+                type: 'debt',
+                borrowDate: new Date(transactionDate),
+                status: 'active',
+                notes: `Otomatis dari penggunaan ${wallet.name}: ${title.trim()}`,
+                sourceTransactionId: null
+              };
+              await FinanceService.addData(userId, linkedUserId, 'debts', debtData);
+              toast.info('Tercatat sebagai hutang baru (Credit Limit)');
+            }
+          }
+        }
+
+        toast.success('Transaksi berhasil disimpan');
+      }
       
       // Update Bundle if related
       if (relatedBundle) {
@@ -129,47 +177,47 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
         });
       }
 
-      // Update Wallet Balance
-      if (selectedWallet) {
-        const currentBalance = Number(selectedWallet.balance) || 0;
-        let newBalance = currentBalance;
-
-        if (selectedWallet.type === 'credit') {
-          // Untuk dompet kredit, balance = Terpakai
-          // Pemasukan (bayar cicilan) mengurangi terpakai, Pengeluaran menambah terpakai
-          newBalance = type === 'pemasukan' ? currentBalance - Number(amount) : currentBalance + Number(amount);
-        } else {
-          // Untuk dompet debit, balance = Saldo Rill
-          // Pemasukan menambah saldo, Pengeluaran mengurangi saldo
-          newBalance = type === 'pemasukan' ? currentBalance + Number(amount) : currentBalance - Number(amount);
-        }
-
-        await FinanceService.updateData(userId, linkedUserId, 'wallets', selectedWalletId, {
-          balance: newBalance
-        });
-      }
-
-      // Auto-debt creation for credit wallets
-      if (selectedWallet?.type === 'credit' && type === 'pengeluaran') {
-        const debtData = {
-          personName: selectedWallet.name,
-          amount: Number(amount),
-          type: 'debt',
-          borrowDate: new Date(),
-          status: 'active',
-          notes: `Otomatis dari penggunaan ${selectedWallet.name}: ${title.trim()}`,
-          sourceTransactionId: null
-        };
-        await FinanceService.addData(userId, linkedUserId, 'debts', debtData);
-        toast.info('Tercatat sebagai hutang baru (Credit Limit)');
-      }
-
-      toast.success('Transaksi berhasil disimpan');
       onClose();
     } catch (error: any) {
       toast.error(`Gagal menyimpan: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isEditing || !initialData?.id || !profile) return;
+    
+    const result = await Swal.fire({
+      title: 'Hapus Transaksi?',
+      text: "Saldo dompet akan dikembalikan otomatis.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      customClass: {
+        popup: 'rounded-[32px]',
+        confirmButton: 'rounded-xl px-6 py-3 font-bold',
+        cancelButton: 'rounded-xl px-6 py-3 font-bold'
+      }
+    });
+
+    if (result.isConfirmed) {
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+
+      setLoading(true);
+      try {
+        await FinanceService.deleteTransaction(userId, profile.linkedUserId || null, initialData);
+        toast.success('Transaksi dihapus');
+        onClose();
+      } catch (error: any) {
+        toast.error(`Gagal menghapus: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -234,9 +282,19 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
               Pemasukan
             </button>
           </div>
-          <button className="p-3 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-neutral-dark">
-            <Camera size={18} className="text-gray-400" />
-          </button>
+          <div className="flex gap-2">
+            {isEditing && (
+              <button 
+                onClick={handleDelete}
+                className="p-3 bg-red-50 rounded-2xl flex items-center justify-center shadow-sm border border-red-100"
+              >
+                <Trash2 size={18} className="text-red-500" />
+              </button>
+            )}
+            <button className="p-3 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-neutral-dark">
+              <Camera size={18} className="text-gray-400" />
+            </button>
+          </div>
         </div>
 
         {/* Hero Category Selection */}
@@ -472,14 +530,33 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
         <KeyButton label="7" onClick={() => handleKeypadPress('7')} />
         <KeyButton label="8" onClick={() => handleKeypadPress('8')} />
         <KeyButton label="9" onClick={() => handleKeypadPress('9')} />
-        <button className="bg-white text-gray-400 rounded-[24px] flex flex-col items-center justify-center p-4 shadow-sm border border-neutral-dark leading-none">
-          <span className="text-[10px] font-black uppercase text-blue-400">
-            {currentTime.toLocaleDateString('id-ID', { month: 'short', day: 'numeric' })}
-          </span>
-          <span className="text-[12px] font-black text-[#1e293b]">
-            {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })}
-          </span>
-        </button>
+        <div className="bg-white rounded-[24px] flex flex-col items-center justify-center shadow-sm border border-neutral-dark leading-none w-full h-full active:bg-neutral transition-colors cursor-pointer relative overflow-visible group">
+          <DatePicker
+            selected={transactionDate}
+            onChange={(date) => date && setTransactionDate(date)}
+            dateFormat="dd MMM yyyy"
+            customInput={
+              <button 
+                type="button"
+                className="w-full h-full flex flex-col items-center justify-center p-4 outline-none active:scale-95 transition-transform"
+                onClick={() => {
+                  console.log('Date picker clicked');
+                  toast.info('Membuka kalender...');
+                }}
+              >
+                <span className="text-[9px] font-black uppercase text-blue-600 mb-1 shrink-0">Pilih Tanggal</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Calendar size={12} className="text-[#1e293b]" />
+                  <span className="text-[11px] font-black text-[#1e293b] whitespace-nowrap">
+                    {transactionDate.toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+              </button>
+            }
+            popperPlacement="top-end"
+            portalId="root-portal"
+          />
+        </div>
 
         {/* Row 4 */}
         <KeyButton label="." onClick={() => handleKeypadPress('.')} />
@@ -590,6 +667,7 @@ export function TransactionForm({ onClose, initialData, relatedBundle }: Transac
       >
         <ArrowLeft size={20} className="text-[#1e293b]" />
       </button>
+
     </motion.div>
   );
 }

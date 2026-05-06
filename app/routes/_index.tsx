@@ -160,7 +160,14 @@ export default function Dashboard() {
           <DebtPage onClose={() => setShowDebts(false)} />
         )}
         {showTransactionLog && (
-          <TransactionLogPage onClose={() => setShowTransactionLog(false)} />
+          <TransactionLogPage 
+            onClose={() => setShowTransactionLog(false)} 
+            onEditTransaction={(tx) => {
+              setShowTransactionLog(false);
+              setPrefilledData(tx);
+              setIsAddingTransaction(true);
+            }}
+          />
         )}
         {showHealthHub && (
           <FinancialStressTest onClose={() => setShowHealthHub(false)} />
@@ -280,11 +287,23 @@ export default function Dashboard() {
                   onOpenRecurring={() => setShowRecurring(true)}
                   onOpenSavings={() => setShowSavings(true)}
                   onOpenBundles={() => setShowBundleList(true)}
+                  onEditTransaction={(tx) => {
+                    setPrefilledData(tx);
+                    setIsAddingTransaction(true);
+                  }}
                   activeFilter={activeFilter}
                   setActiveFilter={setActiveFilter}
                 />
               )}
-              {activeTab === 'insights' && <InsightsTab onOpenLog={() => setShowTransactionLog(true)} />}
+              {activeTab === 'insights' && (
+                <InsightsTab 
+                  onOpenLog={() => setShowTransactionLog(true)} 
+                  onEditTransaction={(tx) => {
+                    setPrefilledData(tx);
+                    setIsAddingTransaction(true);
+                  }}
+                />
+              )}
               {activeTab === 'wallet' && (
                 <WalletTab
                   onAddNew={() => setShowNewWallet(true)}
@@ -432,6 +451,7 @@ function HomeTab({
   onOpenRecurring,
   onOpenSavings,
   onOpenBundles,
+  onEditTransaction,
   activeFilter,
   setActiveFilter
 }: {
@@ -445,6 +465,7 @@ function HomeTab({
   onOpenRecurring: () => void,
   onOpenSavings: () => void,
   onOpenBundles: () => void,
+  onEditTransaction: (tx: any) => void,
   activeFilter: 'Hari' | 'Minggu' | 'Bulan' | 'Tahun' | 'Semua',
   setActiveFilter: (f: any) => void
 }) {
@@ -578,7 +599,11 @@ function HomeTab({
         ) : (
           <div className="flex flex-col gap-4">
             {transactions.slice(0, 5).map((tx) => (
-              <div key={tx.id} className="bg-white p-4 rounded-[28px] border border-neutral-dark flex items-center justify-between shadow-sm">
+              <button
+                key={tx.id}
+                onClick={() => onEditTransaction(tx)}
+                className="bg-white p-4 rounded-[28px] border border-neutral-dark flex items-center justify-between shadow-sm w-full text-left active:scale-[0.98] transition-all"
+              >
                 <div className="flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${tx.type === 'income' ? 'bg-secondary/10 text-secondary' : 'bg-accent/10 text-accent'}`}>
                     {tx.type === 'income' ? '💰' : '💸'}
@@ -591,7 +616,7 @@ function HomeTab({
                 <p className={`font-black ${tx.type === 'income' ? 'text-secondary' : 'text-accent'}`}>
                   {tx.type === 'income' ? '+' : '-'}Rp{tx.amount.toLocaleString('id-ID')}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -615,8 +640,19 @@ function HomeTab({
   );
 }
 
-function InsightsTab({ onOpenLog }: { onOpenLog: () => void }) {
-  return <StatisticsDashboard onShowAllTransactions={onOpenLog} />;
+function InsightsTab({ 
+  onOpenLog,
+  onEditTransaction 
+}: { 
+  onOpenLog: () => void,
+  onEditTransaction?: (tx: any) => void
+}) {
+  return (
+    <StatisticsDashboard 
+      onShowAllTransactions={onOpenLog} 
+      onEditTransaction={onEditTransaction}
+    />
+  );
 }
 
 function WalletTab({ onAddNew, onWalletClick }: { onAddNew: () => void, onWalletClick: (w: any) => void }) {

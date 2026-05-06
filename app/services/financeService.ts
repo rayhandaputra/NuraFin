@@ -182,6 +182,53 @@ export const FinanceService = {
     }
   },
 
+  async updateTransaction(uid: string, linkedUid: string | null, id: string, oldData: any, newData: any) {
+    const ownerId = this.getDataPath(uid, linkedUid);
+    const batch = writeBatch(db);
+    
+    // 1. Update Transaction
+    batch.update(doc(db, 'users', ownerId, 'transactions', id), {
+      ...newData,
+      updatedAt: serverTimestamp()
+    });
+
+    // 2. Adjust Balance
+    // case A: Same Wallet
+    if (oldData.walletId === newData.walletId) {
+      const diff = newData.amount - oldData.amount;
+      if (diff !== 0) {
+        batch.update(doc(db, 'users', ownerId, 'wallets', newData.walletId), {
+          balance: increment(newData.type === 'income' ? diff : -diff),
+          updatedAt: serverTimestamp()
+        });
+      }
+    } 
+    // case B: Changed Wallet
+    else {
+      // Revert Old Wallet
+      if (oldData.walletId) {
+        batch.update(doc(db, 'users', ownerId, 'wallets', oldData.walletId), {
+          balance: increment(oldData.type === 'income' ? -oldData.amount : oldData.amount),
+          updatedAt: serverTimestamp()
+        });
+      }
+      // Apply New Wallet
+      if (newData.walletId) {
+        batch.update(doc(db, 'users', ownerId, 'wallets', newData.walletId), {
+          balance: increment(newData.type === 'income' ? newData.amount : -newData.amount),
+          updatedAt: serverTimestamp()
+        });
+      }
+    }
+
+    try {
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${ownerId}/transactions/${id}`);
+      throw error;
+    }
+  },
+
   // --- Specific Operations ---
   
   async toggleNotification(uid: string, linkedUid: string | null, id: string, read: boolean) {

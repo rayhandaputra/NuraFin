@@ -47,7 +47,13 @@ import { toPng } from 'html-to-image';
 type StatsPeriod = 'Mingguan' | 'Bulanan' | 'Tahunan' | 'Rentang';
 type ViewType = 'Pemasukan' | 'Pengeluaran';
 
-export function StatisticsDashboard({ onShowAllTransactions }: { onShowAllTransactions?: () => void }) {
+export function StatisticsDashboard({ 
+  onShowAllTransactions,
+  onEditTransaction
+}: { 
+  onShowAllTransactions?: () => void,
+  onEditTransaction?: (tx: Transaction) => void
+}) {
   const dashboardRef = useRef<HTMLDivElement>(null);
   const reportRef = useRef<HTMLDivElement>(null);
   const [period, setPeriod] = useState<StatsPeriod>('Bulanan');
@@ -974,10 +980,14 @@ export function StatisticsDashboard({ onShowAllTransactions }: { onShowAllTransa
 
                 <div className="flex flex-col gap-4 mt-2">
                     {searchFilteredTransactions.slice(0, 5).map((tx) => (
-                        <div key={tx.id} className="flex items-center justify-between px-2 group">
+                        <button 
+                            key={tx.id} 
+                            onClick={() => onEditTransaction?.(tx)}
+                            className="flex items-center justify-between px-2 group w-full text-left active:scale-[0.98] transition-all"
+                        >
                             <div className="flex items-center gap-4">
                                 <div className="text-[10px] font-black text-gray-300 w-10 uppercase tracking-tighter">
-                                    {tx.date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
+                                    {tx.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'numeric' })}
                                 </div>
                                 <div className="w-10 h-10 bg-neutral-dark/30 rounded-xl flex items-center justify-center relative">
                                     <span className="text-lg relative z-10">{tx.type === 'income' ? '💰' : '💸'}</span>
@@ -991,7 +1001,7 @@ export function StatisticsDashboard({ onShowAllTransactions }: { onShowAllTransa
                             <span className={`text-[13px] font-black ${tx.type === 'income' ? 'text-green-500' : 'text-[#1e293b]'}`}>
                                 {tx.type === 'income' ? '+' : '-'}Rp{tx.amount >= 1000000 ? (tx.amount / 1000000).toFixed(1) + 'jt' : tx.amount >= 1000 ? (tx.amount / 1000).toFixed(0) + 'k' : tx.amount.toLocaleString('id-ID')}
                             </span>
-                        </div>
+                        </button>
                     ))}
                     
                     <button 
